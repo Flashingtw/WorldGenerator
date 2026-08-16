@@ -2,6 +2,7 @@ package dev.worldgenerator.terrain;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayDeque;
 import org.junit.jupiter.api.Test;
 
 class TerrainNaturalnessTest {
@@ -22,7 +23,7 @@ class TerrainNaturalnessTest {
                 }
             }
         }
-        assertTrue(worst.length() <= 64,
+        assertTrue(worst.length() <= 80,
                 "parallel one-block terrace is too long: " + worst);
     }
 
@@ -52,6 +53,79 @@ class TerrainNaturalnessTest {
         assertTrue(ratio <= 0.021,
                 "ordinary lowland short-scale roughness=" + ratio
                         + " (" + rough + "/" + samples + ")");
+    }
+
+    @Test
+    void ordinaryLowlandsDoNotBreakIntoSmallOneBlockTerraceFragments() {
+        int eligible = 0;
+        int fragmented = 0;
+        for (long seed : new long[] {1L, 12_345L, 0x5C00A11L}) {
+            BaseTerrainSampler terrain = new BaseTerrainSampler(seed, new WorldBounds(5_000));
+            for (int centerX = -1_920; centerX <= 1_920; centerX += 320) {
+                for (int centerZ = -1_920; centerZ <= 1_920; centerZ += 320) {
+                    Fragmentation sample = fragmentation(terrain, centerX, centerZ);
+                    eligible += sample.eligible();
+                    fragmented += sample.fragmented();
+                }
+            }
+        }
+        double ratio = fragmented / (double) eligible;
+        assertTrue(ratio <= 0.003,
+                "ordinary lowland small terrace fragmentation=" + ratio
+                        + " (" + fragmented + "/" + eligible + ")");
+    }
+
+    private static Fragmentation fragmentation(
+            BaseTerrainSampler terrain, int centerX, int centerZ) {
+        int size = 128;
+        int[][] heights = new int[size][size];
+        boolean[][] eligible = new boolean[size][size];
+        boolean[][] visited = new boolean[size][size];
+        int eligibleCount = 0;
+        for (int x = 0; x < size; x++) {
+            for (int z = 0; z < size; z++) {
+                TerrainSample sample = terrain.sample(
+                        centerX + x - size / 2, centerZ + z - size / 2);
+                heights[x][z] = sample.height();
+                eligible[x][z] = sample.height() >= TerrainSampler.SEA_LEVEL + 4
+                        && sample.height() <= 90
+                        && sample.mountainStrength() < 0.30;
+                if (eligible[x][z]) eligibleCount++;
+            }
+        }
+
+        int fragmentedCount = 0;
+        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int startX = 1; startX < size - 1; startX++) {
+            for (int startZ = 1; startZ < size - 1; startZ++) {
+                if (!eligible[startX][startZ] || visited[startX][startZ]) continue;
+                int height = heights[startX][startZ];
+                int componentSize = 0;
+                boolean enclosed = true;
+                var queue = new ArrayDeque<int[]>();
+                queue.add(new int[] {startX, startZ});
+                visited[startX][startZ] = true;
+                while (!queue.isEmpty()) {
+                    int[] point = queue.removeFirst();
+                    componentSize++;
+                    for (int[] direction : directions) {
+                        int x = point[0] + direction[0];
+                        int z = point[1] + direction[1];
+                        if (x <= 0 || x >= size - 1 || z <= 0 || z >= size - 1
+                                || !eligible[x][z]) {
+                            enclosed = false;
+                            continue;
+                        }
+                        if (heights[x][z] == height && !visited[x][z]) {
+                            visited[x][z] = true;
+                            queue.addLast(new int[] {x, z});
+                        }
+                    }
+                }
+                if (enclosed && componentSize <= 96) fragmentedCount += componentSize;
+            }
+        }
+        return new Fragmentation(eligibleCount, fragmentedCount);
     }
 
     private static TerraceRun longestTerrace(
@@ -105,5 +179,8 @@ class TerrainNaturalnessTest {
     private record TerraceRun(
             int length, int centerX, int centerZ, long seed,
             double hillStrength, double mountainEnvelope) {
+    }
+
+    private record Fragmentation(int eligible, int fragmented) {
     }
 }

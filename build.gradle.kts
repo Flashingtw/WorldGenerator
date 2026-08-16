@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "dev.worldgenerator"
-version = "0.7.3-SNAPSHOT"
+version = "0.7.4-SNAPSHOT"
 val pluginVersion = version
 
 repositories {

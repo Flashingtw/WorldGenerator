@@ -22,6 +22,28 @@ class TerrainSamplerTest {
     }
 
     @Test
+    void adjacentSeedsProduceMacroscopicallyDifferentFiniteMaps() {
+        BaseTerrainSampler first = new BaseTerrainSampler(12_345L, new WorldBounds(5_000));
+        BaseTerrainSampler second = new BaseTerrainSampler(12_346L, new WorldBounds(5_000));
+        int samples = 0;
+        int visiblyChanged = 0;
+        int terrainClassChanged = 0;
+        for (int x = -2_400; x <= 2_400; x += 80) {
+            for (int z = -2_400; z <= 2_400; z += 80) {
+                TerrainSample a = first.sample(x, z);
+                TerrainSample b = second.sample(x, z);
+                if (Math.abs(a.height() - b.height()) >= 4) visiblyChanged++;
+                if (terrainClass(a) != terrainClass(b)) terrainClassChanged++;
+                samples++;
+            }
+        }
+        String context = "changed=" + visiblyChanged + "/" + samples
+                + " classes=" + terrainClassChanged + "/" + samples;
+        assertTrue(visiblyChanged >= samples * 0.25, context);
+        assertTrue(terrainClassChanged >= samples * 0.06, context);
+    }
+
+    @Test
     void neighboringColumnsRemainReasonablyContinuous() {
         TerrainSampler sampler = new TerrainSampler(42L);
         for (int x = -500; x < 500; x++) {
@@ -44,5 +66,13 @@ class TerrainSamplerTest {
         }
         assertTrue(ocean, "expected some ocean terrain");
         assertTrue(land, "expected some land terrain");
+    }
+
+
+    private static int terrainClass(TerrainSample sample) {
+        if (sample.height() < TerrainSampler.SEA_LEVEL) return 0;
+        if (sample.mountainStrength() >= 0.42) return 3;
+        if (sample.height() > 90) return 2;
+        return 1;
     }
 }

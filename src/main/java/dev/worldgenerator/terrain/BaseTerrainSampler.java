@@ -34,16 +34,15 @@ public final class BaseTerrainSampler {
         double ridge = Math.pow(1.0 - Math.abs(ridgeNoise), 1.65);
         double mountainHeight = macro.mountainEnvelope() * (25.0 + ridge * 73.0);
         double warpedX = blockX + detailWarp.fractal(
-                blockX / 310.0, blockZ / 310.0, 3, 2.0, 0.50) * 38.0;
+                blockX / 270.0, blockZ / 270.0, 3, 2.0, 0.50) * 84.0;
         double warpedZ = blockZ + detailWarp.fractal(
-                (blockX + 7_913) / 310.0, (blockZ - 5_219) / 310.0,
-                3, 2.0, 0.50) * 38.0;
+                (blockX + 7_913) / 270.0, (blockZ - 5_219) / 270.0,
+                3, 2.0, 0.50) * 84.0;
         double localShape = slopeRelief.fractal(
-                warpedX / 76.0, warpedZ / 76.0, 4, 2.0, 0.62);
+                warpedX / 108.0, warpedZ / 108.0, 3, 2.0, 0.58);
         double hillTransition = Math.sqrt(macro.hillStrength());
         double mountainTransition = Math.sqrt(macro.mountainEnvelope());
-        double localAmplitude = 1.0
-                + hillTransition * 5.0
+        double localAmplitude = hillTransition * 5.0
                 + mountainTransition * 28.0;
         double localRelief = localShape * localAmplitude;
         double channelField = Math.abs(erosionChannels.fractal(

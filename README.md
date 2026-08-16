@@ -161,3 +161,14 @@ inside established hill and mountain regions. The paired acceptance limits keep
 parallel slope terraces at 64 blocks or less and short-scale rough points below
 2.1% of ordinary lowland samples. This replaces the overly aggressive 36-block
 target with a balance between readable slopes and smooth playable ground.
+
+## Seeded terrain hierarchy (v0.7.4)
+
+Seed mixing owns discrete macro layout while low-frequency noise owns broad
+landform continuity. Local fractal relief has no unconditional lowland
+amplitude and is restricted to three medium-scale octaves; horizontal domain
+warping bends hill and mountain contours without adding vertical micro-pits.
+Regression tests now pair a 0.3% cap on small enclosed lowland terrace
+fragments with an 80-block cap on straight contour runs. Adjacent seeds are
+also sampled across the entire finite map and must differ in both height and
+terrain class, rather than merely at one coordinate.
