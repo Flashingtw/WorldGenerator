@@ -187,3 +187,21 @@ from entering the site core. Trunks, branches, and access sections use distinct
 driving-scale widths and shoulders. Automated acceptance covers three seeds at
 both 5000 and 10000 blocks; the rendered road-network preview overlays route
 hierarchy and POIs on the generated relief map.
+
+## Planned abandoned modern city
+
+The city is planned as a macro region rather than an oversized POI. A 5000x5000
+world may contain a compact 600–900 block urban region, while a 10000x10000
+world can support a primary abandoned city roughly 1200–2000 blocks wide, with
+about 1500 blocks as the initial target. The city should occupy only 5–10% of
+playable land so wilderness, mountains, military sites, and travel remain
+meaningful.
+
+Generation will first select a terrain-compatible irregular city boundary, then
+lay out external connections, arterial roads, functional districts, local
+streets, blocks, open space, building slots, and landmarks. Downtown, housing,
+industrial, commercial, public-service, transit, park, and outskirts districts
+will use different density and building families. This work follows the planned
+hydrology pass, because rivers, lakes, bridge locations, and waterfalls must be
+known before the city and its foundations are fixed. See [ROADMAP.md](ROADMAP.md)
+and [CONTEXT.md](CONTEXT.md) for the accepted order and terminology.
