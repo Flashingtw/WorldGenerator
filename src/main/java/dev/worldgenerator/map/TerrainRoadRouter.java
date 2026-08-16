@@ -1,6 +1,6 @@
 package dev.worldgenerator.map;
 
-import dev.worldgenerator.terrain.BaseTerrainSampler;
+import dev.worldgenerator.terrain.TerrainSource;
 import dev.worldgenerator.terrain.PerlinNoise2D;
 import dev.worldgenerator.terrain.TerrainSample;
 import dev.worldgenerator.terrain.TerrainSampler;
@@ -18,7 +18,7 @@ final class TerrainRoadRouter {
     }
 
     static List<RoadNode> route(
-            long seed, int mapSize, BaseTerrainSampler terrain, RoadNode start, RoadNode goal) {
+            long seed, int mapSize, TerrainSource terrain, RoadNode start, RoadNode goal) {
         SearchGrid grid = new SearchGrid(mapSize, terrain, start, goal);
         List<RoadNode> raw = grid.search();
         if (raw.isEmpty()) raw = fallback(terrain, start, goal);
@@ -31,7 +31,7 @@ final class TerrainRoadRouter {
     }
 
     private static List<RoadNode> organicize(
-            List<RoadNode> nodes, BaseTerrainSampler terrain, long seed) {
+            List<RoadNode> nodes, TerrainSource terrain, long seed) {
         if (nodes.size() <= 2) return nodes;
         PerlinNoise2D warp = new PerlinNoise2D(seed ^ 0xD1B54A32D192ED03L);
         List<RoadNode> result = new ArrayList<>();
@@ -70,7 +70,7 @@ final class TerrainRoadRouter {
     }
 
     private static List<RoadNode> roundedCorners(
-            List<RoadNode> nodes, BaseTerrainSampler terrain) {
+            List<RoadNode> nodes, TerrainSource terrain) {
         if (nodes.size() <= 2) return nodes;
         List<RoadNode> result = new ArrayList<>();
         result.add(nodes.get(0));
@@ -93,12 +93,12 @@ final class TerrainRoadRouter {
                 first.z() + (second.z() - first.z()) * amount);
     }
 
-    private static RoadNode onTerrain(BaseTerrainSampler terrain, RoadNode node) {
+    private static RoadNode onTerrain(TerrainSource terrain, RoadNode node) {
         int height = terrain.sample((int) Math.round(node.x()), (int) Math.round(node.z())).height();
         return new RoadNode(node.x(), height, node.z());
     }
 
-    private static boolean usable(List<RoadNode> nodes, BaseTerrainSampler terrain) {
+    private static boolean usable(List<RoadNode> nodes, TerrainSource terrain) {
         for (int index = 1; index < nodes.size(); index++) {
             RoadNode from = nodes.get(index - 1);
             RoadNode to = nodes.get(index);
@@ -108,7 +108,7 @@ final class TerrainRoadRouter {
                 int x = (int) Math.round(from.x() + (to.x() - from.x()) * amount);
                 int z = (int) Math.round(from.z() + (to.z() - from.z()) * amount);
                 TerrainSample sample = terrain.sample(x, z);
-                if (sample.height() <= TerrainSampler.SEA_LEVEL + 1
+                if (sample.underwater()
                         || sample.mountainStrength() >= 0.82) return false;
             }
         }
@@ -116,7 +116,7 @@ final class TerrainRoadRouter {
     }
 
     private static List<RoadNode> grade(
-            List<RoadNode> nodes, BaseTerrainSampler terrain,
+            List<RoadNode> nodes, TerrainSource terrain,
             double startHeight, double goalHeight) {
         if (nodes.size() <= 2) return List.of(
                 new RoadNode(nodes.get(0).x(), startHeight, nodes.get(0).z()),
@@ -162,7 +162,7 @@ final class TerrainRoadRouter {
     }
 
     private static List<RoadNode> fallback(
-            BaseTerrainSampler terrain, RoadNode start, RoadNode goal) {
+            TerrainSource terrain, RoadNode start, RoadNode goal) {
         List<RoadNode> result = new ArrayList<>();
         result.add(start);
         double dx = goal.x() - start.x();
@@ -183,7 +183,7 @@ final class TerrainRoadRouter {
     }
 
     private static final class SearchGrid {
-        private final BaseTerrainSampler terrain;
+        private final TerrainSource terrain;
         private final RoadNode start;
         private final RoadNode goal;
         private final int minimumGridX;
@@ -194,7 +194,7 @@ final class TerrainRoadRouter {
         private final int[] parents;
         private final TerrainSample[] samples;
 
-        SearchGrid(int mapSize, BaseTerrainSampler terrain, RoadNode start, RoadNode goal) {
+        SearchGrid(int mapSize, TerrainSource terrain, RoadNode start, RoadNode goal) {
             this.terrain = terrain;
             this.start = start;
             this.goal = goal;
@@ -262,7 +262,7 @@ final class TerrainRoadRouter {
             double slope = Math.abs(to.height() - from.height()) / distance;
             double cost = distance * (1.0 + slope * slope * 240.0
                     + to.mountainStrength() * to.mountainStrength() * 13.0);
-            if (to.height() <= TerrainSampler.SEA_LEVEL + 1) cost += 12_000.0;
+            if (to.underwater()) cost += 12_000.0;
             if (to.height() > 98) cost += (to.height() - 98) * (to.height() - 98) * 2.2;
             return cost;
         }

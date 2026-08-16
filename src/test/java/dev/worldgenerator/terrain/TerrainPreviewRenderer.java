@@ -36,6 +36,30 @@ public final class TerrainPreviewRenderer {
         renderSlopeCloseup(output, "slope-seed12345-x-720-z-400",
                 12_345L, -720, -400);
         renderRoadNetwork(output, "roads-finite-5000-seed12345", 12_345L, 5_000);
+        renderHydrology(output, "hydrology-finite-5000-seed12345", 12_345L, 5_000);
+        renderHydrology(output, "hydrology-finite-10000-seed965", 0x5C00A11L, 10_000);
+    }
+
+    private static void renderHydrology(
+            Path output, String name, long seed, int mapSize) throws IOException {
+        TerrainSampler terrain = new TerrainSampler(seed, new WorldBounds(mapSize));
+        BufferedImage image = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_RGB);
+        for (int pixelX = 0; pixelX < IMAGE_SIZE; pixelX++) {
+            int x = coordinate(pixelX, mapSize);
+            for (int pixelZ = 0; pixelZ < IMAGE_SIZE; pixelZ++) {
+                int z = coordinate(pixelZ, mapSize);
+                TerrainSample sample = terrain.sample(x, z);
+                Color color = reliefColor(sample);
+                if (sample.inlandWater()) {
+                    int blue = clamp(164 + (sample.waterLevel() - sample.height()) * 5);
+                    color = sample.waterfallStrength() > 0.2
+                            ? new Color(154, 218, 230)
+                            : new Color(31, 105, blue);
+                }
+                image.setRGB(pixelX, pixelZ, color.getRGB());
+            }
+        }
+        ImageIO.write(image, "png", output.resolve(name + ".png").toFile());
     }
 
     private static void renderRoadNetwork(
@@ -183,6 +207,7 @@ public final class TerrainPreviewRenderer {
             case TERRACOTTA -> new Color(154, 91, 65);
             case RED_SAND -> new Color(183, 101, 57);
             case SAND -> new Color(205, 190, 137);
+            case GRAVEL -> new Color(132, 128, 121);
             case STONE -> new Color(123, 123, 119);
         };
         if (!surface.shortGrass() || surface.kind() != SurfaceKind.GRASS) return base;

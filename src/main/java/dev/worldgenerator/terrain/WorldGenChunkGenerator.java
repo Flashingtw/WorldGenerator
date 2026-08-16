@@ -192,7 +192,7 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
             }
             data.setBlock(x, y, z, material);
         }
-        for (int y = surfaceY + 1; y <= TerrainSampler.SEA_LEVEL && y < data.getMaxHeight(); y++) {
+        for (int y = surfaceY + 1; y <= sample.waterLevel() && y < data.getMaxHeight(); y++) {
             data.setBlock(x, y, z, Material.WATER);
         }
         if (surface.shortGrass() && surfaceY + 1 < data.getMaxHeight()) {
@@ -208,6 +208,8 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
             case RED_SAND -> depth == 0 ? Material.RED_SAND
                     : depth < 4 ? Material.RED_SANDSTONE : Material.STONE;
             case SAND -> depth == 0 ? Material.SAND : depth < 4 ? Material.SANDSTONE : Material.STONE;
+            case GRAVEL -> depth == 0 ? Material.GRAVEL
+                    : depth < 3 ? Material.COARSE_DIRT : Material.STONE;
             case STONE -> depth < 4 ? Material.STONE : Material.DEEPSLATE;
         };
     }

@@ -1,8 +1,8 @@
 package dev.worldgenerator.map;
 
-import dev.worldgenerator.terrain.BaseTerrainSampler;
 import dev.worldgenerator.terrain.TerrainSample;
 import dev.worldgenerator.terrain.TerrainSampler;
+import dev.worldgenerator.terrain.TerrainSource;
 import dev.worldgenerator.terrain.WorldBounds;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -15,14 +15,14 @@ public final class AdventureMapPlanner {
     private AdventureMapPlanner() {
     }
 
-    public static AdventureMapPlan create(long seed, WorldBounds bounds, BaseTerrainSampler terrain) {
+    public static AdventureMapPlan create(long seed, WorldBounds bounds, TerrainSource terrain) {
         if (!bounds.isLimited()) return AdventureMapPlan.empty();
         List<Candidate> candidates = findCandidates(seed, bounds.size(), terrain);
         List<MapPoi> points = selectPoints(candidates, bounds.size());
         return new AdventureMapPlan(seed, points, connect(seed, bounds.size(), points, terrain));
     }
 
-    private static List<Candidate> findCandidates(long seed, int size, BaseTerrainSampler terrain) {
+    private static List<Candidate> findCandidates(long seed, int size, TerrainSource terrain) {
         int margin = Math.max(360, size / 14);
         int radius = size / 2 - margin;
         int step = Math.max(260, size / 20);
@@ -68,7 +68,7 @@ public final class AdventureMapPlanner {
     }
 
     private static List<RoadSegment> connect(
-            long seed, int mapSize, List<MapPoi> points, BaseTerrainSampler terrain) {
+            long seed, int mapSize, List<MapPoi> points, TerrainSource terrain) {
         if (points.size() < 2) return List.of();
         List<Edge> selected = new ArrayList<>();
         Set<Integer> connected = new HashSet<>();
@@ -171,7 +171,7 @@ public final class AdventureMapPlanner {
                 poi.z() + Math.sin(angle) * distance);
     }
 
-    private static double edgeCost(MapPoi from, MapPoi to, BaseTerrainSampler terrain) {
+    private static double edgeCost(MapPoi from, MapPoi to, TerrainSource terrain) {
         double distance = Math.hypot(to.x() - from.x(), to.z() - from.z());
         double penalty = Math.abs(to.y() - from.y()) * 18.0;
         int previousHeight = from.y();
@@ -180,7 +180,7 @@ public final class AdventureMapPlanner {
             int x = (int) Math.round(from.x() + (to.x() - from.x()) * t);
             int z = (int) Math.round(from.z() + (to.z() - from.z()) * t);
             TerrainSample sample = terrain.sample(x, z);
-            if (sample.height() <= TerrainSampler.SEA_LEVEL + 1) penalty += 8_000.0;
+            if (sample.underwater()) penalty += 8_000.0;
             penalty += Math.max(0, sample.height() - 96) * 15.0;
             penalty += Math.abs(sample.height() - previousHeight) * 25.0;
             previousHeight = sample.height();

@@ -22,6 +22,7 @@ close the window while the server is saving.
 /wg create terrain_a 12345
 /wg create terrain_b 67890 5000x5000
 /wg create terrain_c random 10000x10000
+/wg create hydro_5000 12345 5000x5000
 /wg list
 /wg tp terrain_a
 /wg tp terrain_b
@@ -37,3 +38,9 @@ are moved to `plugins/WorldGenerator/trash/` so accidental deletion is recoverab
 
 Custom worlds are stored under the server's `lobby/dimensions/worldgenerator/`
 directory by Paper 26.1.2.
+
+For v0.8.5 water QA, always create a new world so old chunks are not reused.
+Follow a river from its mountain source to the ocean and verify that its water
+never climbs uphill, lakes widen an existing river instead of appearing as
+isolated circles, gravel banks blend into nearby ground, and roads either avoid
+water or cross it over a short reserved span.

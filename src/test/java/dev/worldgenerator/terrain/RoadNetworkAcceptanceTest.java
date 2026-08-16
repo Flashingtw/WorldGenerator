@@ -35,7 +35,9 @@ class RoadNetworkAcceptanceTest {
                     assertTrue(plan.shape(poi.x(), poi.z(), poi.y()).roadStrength() < 0.01,
                             "road entered POI core " + poi + " " + context);
                 }
-                for (RoadSegment road : plan.roads()) verifyRoute(base, road, context);
+                for (RoadSegment road : plan.roads()) {
+                    verifyRoute(base, terrain.hydrology(), road, context);
+                }
             }
         }
     }
@@ -65,8 +67,10 @@ class RoadNetworkAcceptanceTest {
     }
 
     private static void verifyRoute(
-            BaseTerrainSampler base, RoadSegment road, String context) {
+            BaseTerrainSampler base, HydrologyPlan hydrology,
+            RoadSegment road, String context) {
         double routeLength = 0.0;
+        double continuousWater = 0.0;
         for (int index = 1; index < road.centerline().size(); index++) {
             RoadNode previous = road.centerline().get(index - 1);
             RoadNode node = road.centerline().get(index);
@@ -81,8 +85,15 @@ class RoadNetworkAcceptanceTest {
                 int x = (int) Math.round(previous.x() + (node.x() - previous.x()) * amount);
                 int z = (int) Math.round(previous.z() + (node.z() - previous.z()) * amount);
                 TerrainSample sample = base.sample(x, z);
-                assertTrue(sample.height() > TerrainSampler.SEA_LEVEL + 1,
-                        "road crossed water at " + x + "," + z + " " + road + " " + context);
+                HydrologySample hydrated = hydrology.shape(x, z, sample);
+                if (hydrated.waterLevel() > hydrated.height()) {
+                    continuousWater += segmentLength / samples;
+                } else {
+                    continuousWater = 0.0;
+                }
+                assertTrue(continuousWater <= 96.0,
+                        "road followed water instead of reserving a crossing at "
+                                + x + "," + z + " " + road + " " + context);
                 assertTrue(sample.mountainStrength() < 0.82,
                         "road crossed mountain core at " + x + "," + z
                                 + " " + road + " " + context);

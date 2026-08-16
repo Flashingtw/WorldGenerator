@@ -7,5 +7,6 @@ public enum SurfaceKind {
     TERRACOTTA,
     RED_SAND,
     SAND,
+    GRAVEL,
     STONE
 }

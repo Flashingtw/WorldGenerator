@@ -104,7 +104,7 @@ class AdventureTerrainTest {
                     int z = (int) Math.round(previous.z() + (node.z() - previous.z()) * amount);
                     TerrainSample sample = base.sample(x, z);
                     assertTrue(sample.height() > TerrainSampler.SEA_LEVEL + 1,
-                            "road entered water: " + road + " at " + x + "," + z);
+                            "road entered ocean: " + road + " at " + x + "," + z);
                     assertTrue(sample.mountainStrength() < 0.82,
                             "road crossed a mountain core: " + road + " at " + x + "," + z);
                 }

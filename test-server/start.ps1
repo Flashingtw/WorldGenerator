@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $serverDirectory = $PSScriptRoot
 $projectDirectory = Split-Path -Parent $serverDirectory
 $javaExecutable = Join-Path $projectDirectory '.tools\jdk25\jdk-25.0.4+7\bin\java.exe'
-$pluginSource = Join-Path $projectDirectory 'build\libs\worldgenerator-0.8.0-SNAPSHOT.jar'
+$pluginSource = Join-Path $projectDirectory 'build\libs\worldgenerator-0.8.5-SNAPSHOT.jar'
 $pluginDirectory = Join-Path $serverDirectory 'plugins'
 
 if (-not (Test-Path -LiteralPath $javaExecutable)) {

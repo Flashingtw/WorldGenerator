@@ -21,6 +21,13 @@ public final class SurfaceSampler {
     }
 
     public SurfaceSample sample(int x, int z, BiomeKind biome, TerrainSample terrain) {
+        if (terrain.waterfallStrength() > 0.12) {
+            return new SurfaceSample(SurfaceKind.STONE, false);
+        }
+        if (terrain.riverStrength() > 0.12 || terrain.lakeStrength() > 0.12
+                || terrain.shoreStrength() > 0.16) {
+            return new SurfaceSample(SurfaceKind.GRAVEL, false);
+        }
         if (biome.sandySurface() && terrain.height() <= TerrainSampler.SEA_LEVEL + 2) {
             return new SurfaceSample(SurfaceKind.SAND, false);
         }
@@ -55,6 +62,9 @@ public final class SurfaceSampler {
                 && terrain.height() < 108
                 && terrain.roadStrength() < 0.05
                 && terrain.poiStrength() < 0.05
+                && !terrain.underwater()
+                && terrain.riverStrength() < 0.05
+                && terrain.lakeStrength() < 0.05
                 && biome != BiomeKind.SNOWY_PLAINS
                 && biome != BiomeKind.GROVE;
         boolean shortGrass = acceptsCover

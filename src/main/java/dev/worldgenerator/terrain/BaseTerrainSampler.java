@@ -1,7 +1,7 @@
 package dev.worldgenerator.terrain;
 
 /** Generates landscape only: macro geography composed with shared surface relief. */
-public final class BaseTerrainSampler {
+public final class BaseTerrainSampler implements TerrainSource {
     private final MacroTerrainLayout macroLayout;
     private final Noise2D broadRelief;
     private final Noise2D surfaceDetail;
@@ -20,6 +20,7 @@ public final class BaseTerrainSampler {
         erosionChannels = new PerlinNoise2D(seed ^ 0xA4093822299F31D0L);
     }
 
+    @Override
     public TerrainSample sample(int blockX, int blockZ) {
         MacroTerrainLayout.MacroTerrainSample macro = macroLayout.sample(blockX, blockZ);
         double broad = broadRelief.fractal(blockX / 520.0, blockZ / 520.0, 4, 2.0, 0.49);

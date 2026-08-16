@@ -205,3 +205,17 @@ will use different density and building families. This work follows the planned
 hydrology pass, because rivers, lakes, bridge locations, and waterfalls must be
 known before the city and its foundations are fixed. See [ROADMAP.md](ROADMAP.md)
 and [CONTEXT.md](CONTEXT.md) for the accepted order and terminology.
+
+## Hydrology and natural landmarks (v0.8.5)
+
+Finite maps now plan deterministic drainage before roads and POIs. Separated
+upland sources follow terrain-aware routes to the first ocean contact; river
+surfaces can remain level or descend but never climb. Channels narrow in mountain
+terrain, develop broader low-frequency bends through lowlands, carve graded beds,
+and use gravel or exposed stone around banks and waterfall drops.
+
+Seeded irregular lakes widen suitable middle sections of existing rivers rather
+than appearing as disconnected circular ponds. Watercourses stop at the coast,
+and road planning sees inland water as an obstacle, reserving only short crossings
+when a route cannot reasonably stay on one bank. The same seed, map size, and
+plugin version reproduce the same drainage layout.
