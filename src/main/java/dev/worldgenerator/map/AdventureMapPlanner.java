@@ -19,7 +19,7 @@ public final class AdventureMapPlanner {
         if (!bounds.isLimited()) return AdventureMapPlan.empty();
         List<Candidate> candidates = findCandidates(seed, bounds.size(), terrain);
         List<MapPoi> points = selectPoints(candidates, bounds.size());
-        return new AdventureMapPlan(points, connect(points, terrain));
+        return new AdventureMapPlan(seed, points, connect(points, terrain));
     }
 
     private static List<Candidate> findCandidates(long seed, int size, BaseTerrainSampler terrain) {

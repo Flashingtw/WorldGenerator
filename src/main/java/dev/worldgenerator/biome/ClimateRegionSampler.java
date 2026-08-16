@@ -1,6 +1,6 @@
 package dev.worldgenerator.biome;
 
-import dev.worldgenerator.terrain.Noise2D;
+import dev.worldgenerator.terrain.PerlinNoise2D;
 
 /**
  * Jittered climate cells with domain-warped boundaries. Cells keep climate
@@ -11,15 +11,15 @@ public final class ClimateRegionSampler {
     private static final double SITE_JITTER = 0.34;
 
     private final long seed;
-    private final Noise2D boundaryWarp;
-    private final Noise2D temperature;
-    private final Noise2D humidity;
+    private final PerlinNoise2D boundaryWarp;
+    private final PerlinNoise2D temperature;
+    private final PerlinNoise2D humidity;
 
     public ClimateRegionSampler(long seed) {
         this.seed = seed;
-        boundaryWarp = new Noise2D(seed ^ 0x29F6C8A17D4503BEL);
-        temperature = new Noise2D(seed ^ 0x51D2E74A9C3068BFL);
-        humidity = new Noise2D(seed ^ 0x73A09B4C2E1D65F8L);
+        boundaryWarp = new PerlinNoise2D(seed ^ 0x29F6C8A17D4503BEL);
+        temperature = new PerlinNoise2D(seed ^ 0x51D2E74A9C3068BFL);
+        humidity = new PerlinNoise2D(seed ^ 0x73A09B4C2E1D65F8L);
     }
 
     public ClimateSample sample(int blockX, int blockZ) {
@@ -46,12 +46,18 @@ public final class ClimateRegionSampler {
             }
         }
 
-        double globalTemperature = temperature.fractal(nearestX / 5.0, nearestZ / 5.0, 3, 2.0, 0.52) * 0.68;
-        double globalHumidity = humidity.fractal(nearestX / 4.5, nearestZ / 4.5, 3, 2.0, 0.52) * 0.68;
-        double localTemperature = signedHash(nearestX, nearestZ, 47) * 0.56;
-        double localHumidity = signedHash(nearestX, nearestZ, 71) * 0.56;
-        long regionId = mix(seed ^ ((long) nearestX * 0x632BE59BD9B4E019L)
+        double globalTemperature = temperature.fractal(
+                blockX / 2_650.0, blockZ / 2_650.0, 4, 2.0, 0.52) * 1.28;
+        double globalHumidity = humidity.fractal(
+                blockX / 2_450.0, blockZ / 2_450.0, 4, 2.0, 0.52) * 1.32;
+        double localTemperature = temperature.sample(
+                (blockX + 8_137) / 610.0, (blockZ - 3_719) / 610.0) * 0.72;
+        double localHumidity = humidity.sample(
+                (blockX - 5_311) / 590.0, (blockZ + 7_127) / 590.0) * 0.72;
+        long regionHash = mix(seed ^ ((long) nearestX * 0x632BE59BD9B4E019L)
                 ^ ((long) nearestZ * 0x9E3779B97F4A7C15L));
+        int mapColor = Math.floorMod(nearestX, 2) * 2 + Math.floorMod(nearestZ, 2);
+        long regionId = (regionHash & ~3L) | mapColor;
         return new ClimateSample(
                 clamp(globalTemperature + localTemperature),
                 clamp(globalHumidity + localHumidity),

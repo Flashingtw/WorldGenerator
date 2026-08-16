@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.worldgenerator.map.MapPoi;
+import dev.worldgenerator.map.PoiType;
 import dev.worldgenerator.map.RoadSegment;
 import org.junit.jupiter.api.Test;
 
@@ -59,5 +60,19 @@ class AdventureTerrainTest {
         TerrainSampler second = new TerrainSampler(SEED, new WorldBounds(10_000));
         assertEquals(first.plan().pointsOfInterest(), second.plan().pointsOfInterest());
         assertEquals(first.plan().roads(), second.plan().roads());
+    }
+
+    @Test
+    void gravelRoadReachesSmallAndMediumPoiEntrances() {
+        for (PoiType type : new PoiType[] {PoiType.SMALL, PoiType.MEDIUM}) {
+            MapPoi site = new MapPoi(0, 72, 0, type);
+            MapPoi approach = new MapPoi(300, 72, 0, PoiType.SMALL);
+            var plan = new dev.worldgenerator.map.AdventureMapPlan(
+                    java.util.List.of(site, approach),
+                    java.util.List.of(new RoadSegment(site, approach)));
+            int entranceDistance = type == PoiType.SMALL ? 18 : 26;
+            assertTrue(plan.shape(entranceDistance, 0, 72).roadStrength() > 0.65,
+                    type + " gravel stops before its authored entrance");
+        }
     }
 }

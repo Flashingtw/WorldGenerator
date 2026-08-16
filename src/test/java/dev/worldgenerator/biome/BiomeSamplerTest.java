@@ -32,27 +32,34 @@ class BiomeSamplerTest {
         for (long seed : new long[] {1L, 123L, 12_345L}) {
             BiomeSampler sampler = new BiomeSampler(seed);
             for (int fixed : new int[] {-9_000, 0, 9_000}) {
-                assertTrue(longestRun(sampler, fixed, true) <= 2_800,
-                        "single x-axis biome run exceeded 2800 blocks for seed " + seed);
-                assertTrue(longestRun(sampler, fixed, false) <= 2_800,
-                        "single z-axis biome run exceeded 2800 blocks for seed " + seed);
+                BiomeRun xRun = longestRun(sampler, fixed, true);
+                BiomeRun zRun = longestRun(sampler, fixed, false);
+                assertTrue(xRun.length() <= 2_800,
+                        "single x-axis " + xRun + " at fixed=" + fixed + " seed=" + seed);
+                assertTrue(zRun.length() <= 2_800,
+                        "single z-axis " + zRun + " at fixed=" + fixed + " seed=" + seed);
             }
         }
     }
 
-    private static int longestRun(BiomeSampler sampler, int fixed, boolean alongX) {
+    private static BiomeRun longestRun(BiomeSampler sampler, int fixed, boolean alongX) {
         BiomeKind previous = null;
         int run = 0;
-        int longestRun = 0;
+        BiomeRun longestRun = new BiomeRun(null, 0, 0);
         for (int changing = -12_000; changing <= 12_000; changing += 100) {
             BiomeKind current = alongX
                     ? sampler.sample(changing, 70, fixed)
                     : sampler.sample(fixed, 70, changing);
             run = current == previous ? run + 1 : 1;
-            longestRun = Math.max(longestRun, run);
+            if (run * 100 > longestRun.length()) {
+                longestRun = new BiomeRun(current, changing - (run - 1) * 100, run * 100);
+            }
             previous = current;
         }
-        return longestRun * 100;
+        return longestRun;
+    }
+
+    private record BiomeRun(BiomeKind biome, int start, int length) {
     }
 
     @Test

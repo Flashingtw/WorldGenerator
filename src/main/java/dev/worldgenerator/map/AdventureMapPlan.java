@@ -1,17 +1,24 @@
 package dev.worldgenerator.map;
 
+import dev.worldgenerator.terrain.PerlinNoise2D;
 import java.util.List;
 
 /** Immutable gameplay layout that flattens POIs and grades roads into terrain. */
 public final class AdventureMapPlan {
-    private static final AdventureMapPlan EMPTY = new AdventureMapPlan(List.of(), List.of());
+    private static final AdventureMapPlan EMPTY = new AdventureMapPlan(0L, List.of(), List.of());
 
     private final List<MapPoi> pointsOfInterest;
     private final List<RoadSegment> roads;
+    private final PerlinNoise2D roadEdgeNoise;
 
     public AdventureMapPlan(List<MapPoi> pointsOfInterest, List<RoadSegment> roads) {
+        this(0L, pointsOfInterest, roads);
+    }
+
+    public AdventureMapPlan(long seed, List<MapPoi> pointsOfInterest, List<RoadSegment> roads) {
         this.pointsOfInterest = List.copyOf(pointsOfInterest);
         this.roads = List.copyOf(roads);
+        roadEdgeNoise = new PerlinNoise2D(seed ^ 0xA54FF53A5F1D36F1L);
     }
 
     public static AdventureMapPlan empty() {
@@ -32,7 +39,8 @@ public final class AdventureMapPlan {
         double poiStrength = 0.0;
 
         for (RoadSegment road : roads) {
-            double distance = road.distanceTo(x, z);
+            double edgeOffset = roadEdgeNoise.fractal(x / 92.0, z / 92.0, 3, 2.0, 0.52) * 2.2;
+            double distance = Math.max(0.0, road.distanceTo(x, z) + edgeOffset);
             double shoulder = 1.0 - smoothstep(7.0, 24.0, distance);
             if (shoulder > 0.0) {
                 height = lerp(height, road.targetHeight(x, z), shoulder * 0.92);
@@ -55,8 +63,8 @@ public final class AdventureMapPlan {
                         1.0 - smoothstep(flatRadius - 10.0, flatRadius, distance));
             }
             double roadCutoff = switch (poi.type()) {
-                case SMALL -> 22.0;
-                case MEDIUM -> 27.0;
+                case SMALL -> 14.0;
+                case MEDIUM -> 22.0;
                 case LARGE -> 58.0;
             };
             roadStrength *= smoothstep(roadCutoff - 4.0, roadCutoff + 3.0, distance);

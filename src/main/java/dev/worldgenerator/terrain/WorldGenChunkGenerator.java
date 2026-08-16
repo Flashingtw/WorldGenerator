@@ -2,6 +2,9 @@ package dev.worldgenerator.terrain;
 
 import dev.worldgenerator.biome.BiomeKind;
 import dev.worldgenerator.biome.BiomeSampler;
+import dev.worldgenerator.biome.SurfaceKind;
+import dev.worldgenerator.biome.SurfaceSample;
+import dev.worldgenerator.biome.SurfaceSampler;
 import dev.worldgenerator.biome.WorldGenBiomeProvider;
 import dev.worldgenerator.structure.StructureBlock;
 import dev.worldgenerator.structure.StructureMaterial;
@@ -23,6 +26,7 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
     private static final GenerationPolicy POLICY = GenerationPolicy.BARREN;
     private final TerrainSampler terrain;
     private final BiomeSampler biomes;
+    private final SurfaceSampler surfaces;
     private final WarDamagedStructurePlan structures;
     private final long seed;
     private final WorldBounds bounds;
@@ -36,6 +40,7 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
         this.bounds = bounds;
         this.terrain = new TerrainSampler(seed, bounds);
         this.biomes = new BiomeSampler(seed, bounds);
+        this.surfaces = new SurfaceSampler(seed);
         this.structures = WarDamagedStructurePlan.create(seed, terrain.plan());
     }
 
@@ -57,7 +62,9 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
                 TerrainSample sample = terrain.sample(originX + localX, originZ + localZ);
                 int surfaceY = Math.max(minY + 1, Math.min(maxY - 1, sample.height()));
                 BiomeKind biome = biomes.sample(originX + localX, surfaceY, originZ + localZ);
-                setColumn(chunkData, localX, localZ, minY, surfaceY, biome, sample);
+                SurfaceSample surface = surfaces.sample(
+                        originX + localX, originZ + localZ, biome, sample);
+                setColumn(chunkData, localX, localZ, minY, surfaceY, surface, sample);
             }
         }
         placeStructures(chunkData, chunkX, chunkZ);
@@ -172,7 +179,7 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
     }
 
     private static void setColumn(
-            ChunkData data, int x, int z, int minY, int surfaceY, BiomeKind biome,
+            ChunkData data, int x, int z, int minY, int surfaceY, SurfaceSample surface,
             TerrainSample sample) {
         data.setBlock(x, minY, z, Material.BEDROCK);
         for (int y = minY + 1; y <= surfaceY; y++) {
@@ -180,20 +187,29 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
             int depth = surfaceY - y;
             if (sample.roadStrength() > 0.25) {
                 material = depth == 0 ? Material.GRAVEL : depth < 3 ? Material.COARSE_DIRT : Material.STONE;
-            } else if (biome.badlandsSurface()) {
-                material = depth < 5 ? Material.TERRACOTTA : Material.STONE;
-            } else if (biome.sandySurface() || surfaceY <= TerrainSampler.SEA_LEVEL + 1) {
-                material = depth == 0 ? Material.SAND : depth < 4 ? Material.SANDSTONE : Material.STONE;
-            } else if (biome.stonySurface()) {
-                material = depth < 4 ? Material.STONE : Material.DEEPSLATE;
             } else {
-                material = depth == 0 ? Material.GRASS_BLOCK : depth < 4 ? Material.DIRT : Material.STONE;
+                material = surfaceMaterial(surface.kind(), depth);
             }
             data.setBlock(x, y, z, material);
         }
         for (int y = surfaceY + 1; y <= TerrainSampler.SEA_LEVEL && y < data.getMaxHeight(); y++) {
             data.setBlock(x, y, z, Material.WATER);
         }
+        if (surface.shortGrass() && surfaceY + 1 < data.getMaxHeight()) {
+            data.setBlock(x, surfaceY + 1, z, Material.SHORT_GRASS);
+        }
+    }
+
+    private static Material surfaceMaterial(SurfaceKind kind, int depth) {
+        return switch (kind) {
+            case GRASS -> depth == 0 ? Material.GRASS_BLOCK : depth < 4 ? Material.DIRT : Material.STONE;
+            case COARSE_DIRT -> depth == 0 ? Material.COARSE_DIRT : depth < 4 ? Material.DIRT : Material.STONE;
+            case TERRACOTTA -> depth < 5 ? Material.TERRACOTTA : Material.STONE;
+            case RED_SAND -> depth == 0 ? Material.RED_SAND
+                    : depth < 4 ? Material.RED_SANDSTONE : Material.STONE;
+            case SAND -> depth == 0 ? Material.SAND : depth < 4 ? Material.SANDSTONE : Material.STONE;
+            case STONE -> depth < 4 ? Material.STONE : Material.DEEPSLATE;
+        };
     }
 
     @Override

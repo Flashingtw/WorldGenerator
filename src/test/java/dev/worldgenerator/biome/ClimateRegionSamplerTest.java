@@ -50,4 +50,20 @@ class ClimateRegionSamplerTest {
                     "climate region exceeded 1600 blocks for seed " + seed);
         }
     }
+
+    @Test
+    void climateValuesDoNotJumpAtRegionBorders() {
+        ClimateRegionSampler sampler = new ClimateRegionSampler(12_345L);
+        ClimateSample previous = sampler.sample(-6_000, 317);
+        double largestJump = 0.0;
+        for (int x = -5_999; x <= 6_000; x++) {
+            ClimateSample current = sampler.sample(x, 317);
+            largestJump = Math.max(largestJump,
+                    Math.max(Math.abs(current.temperature() - previous.temperature()),
+                            Math.abs(current.humidity() - previous.humidity())));
+            previous = current;
+        }
+        assertTrue(largestJump < 0.035,
+                "adjacent surface climate jumps by " + largestJump);
+    }
 }

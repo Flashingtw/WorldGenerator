@@ -121,3 +121,19 @@ otherwise uniform biome areas while retaining coherent regions.
 Run `gradle renderTerrainPreviews` to produce relief and grayscale height maps in
 `build/reports/terrain/` for manual visual QA. These diagnostics cover two
 5000x5000 seeds, one 10000x10000 seed, and one unlimited-world window.
+
+## Organic surfaces (v0.7.1)
+
+Climate temperature and humidity now use continuous multi-scale gradient Perlin
+noise, while bounded Voronoi cells remain only as biome-region identifiers. Dry
+terrain is selected from a separate broad geological field instead of switching
+topsoil directly at a discrete biome border. Grass therefore reaches terracotta
+through a wide coarse-dirt belt, with secondary red-sand and sand patches rather
+than a straight material wall.
+
+Small and medium POI roads now reach their authored forecourt or loading entrance.
+Road shoulders receive low-amplitude Perlin variation, but large reserved sites
+retain their cutoff so external gravel cannot cross a future military compound.
+Custom sparse short grass is generated on suitable grass blocks while roads, POI
+pads, snow regions, trees, vanilla decorations, and animal spawning remain clear.
+Surface-material PNGs are included in `renderTerrainPreviews` output.

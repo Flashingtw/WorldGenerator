@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "dev.worldgenerator"
-version = "0.7.0-SNAPSHOT"
+version = "0.7.1-SNAPSHOT"
 val pluginVersion = version
 
 repositories {
@@ -38,7 +38,7 @@ tasks.compileJava {
 
 tasks.register<JavaExec>("renderTerrainPreviews") {
     group = "verification"
-    description = "Renders deterministic v0.7 terrain and height-map PNG previews."
+    description = "Renders deterministic v0.7 terrain, height, and surface-material PNG previews."
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("dev.worldgenerator.terrain.TerrainPreviewRenderer")
