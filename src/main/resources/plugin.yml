@@ -1,0 +1,17 @@
+name: WorldGenerator
+version: '${version}'
+main: dev.worldgenerator.WorldGeneratorPlugin
+api-version: '26.1.2'
+description: Seed-based custom terrain generator for Paper 26.1.2
+author: worldgenerator
+load: STARTUP
+commands:
+  worldgen:
+    description: Create, list and switch custom generated worlds
+    usage: /worldgen <create|tp|lobby|list> [name] [seed]
+    aliases: [wg]
+    permission: worldgenerator.admin
+permissions:
+  worldgenerator.admin:
+    description: Create and switch generated worlds
+    default: op

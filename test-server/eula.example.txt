@@ -1,0 +1,3 @@
+# Copy this file to eula.txt, read https://aka.ms/MinecraftEULA,
+# and set eula=true only if you accept the agreement.
+eula=false
