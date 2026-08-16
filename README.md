@@ -2,6 +2,10 @@
 
 Paper 26.1.2 / Java 25 custom terrain generator.
 
+The accepted production order and visual-quality gates are recorded in
+[ROADMAP.md](ROADMAP.md). The v0.6.0 military compound is a rejected technical
+experiment and is not the quality baseline for future structures.
+
 ## Build
 
 Install a Java 25 JDK, then run `gradle build`. Copy the resulting JAR from
