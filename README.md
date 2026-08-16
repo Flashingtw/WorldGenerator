@@ -137,3 +137,17 @@ retain their cutoff so external gravel cannot cross a future military compound.
 Custom sparse short grass is generated on suitable grass blocks while roads, POI
 pads, snow regions, trees, vanilla decorations, and animal spawning remain clear.
 Surface-material PNGs are included in `renderTerrainPreviews` output.
+
+## Natural slope relief (v0.7.2)
+
+Mountain flanks and foothills no longer rely almost entirely on the smooth
+distance to a mountain-chain curve. Domain-warped medium relief creates spurs
+and saddles, narrow Perlin zero-value networks cut shallow drainage gullies,
+and a low-amplitude 4-8 block detail layer breaks voxel rounding into shorter
+contour steps. Detail strength follows the square root of hill and mountain
+transition strength, so foothills receive useful variation without turning
+mountain summits into noise or damaging broad buildable lowlands.
+
+The terrain diagnostics now include a one-block-per-pixel shaded slope close-up.
+Automated scans across three seeds reject sloped windows where a parallel
+one-block contour terrace remains continuous for more than 36 blocks.

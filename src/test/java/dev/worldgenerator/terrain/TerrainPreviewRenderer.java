@@ -27,6 +27,35 @@ public final class TerrainPreviewRenderer {
         render(output, "finite-5000-seed12345", 12_345L, new WorldBounds(5_000), 5_000);
         render(output, "finite-10000-seed965", 0x5C00A11L, new WorldBounds(10_000), 10_000);
         render(output, "unlimited-seed12345", 12_345L, WorldBounds.UNLIMITED, 24_000);
+        renderSlopeCloseup(output, "slope-seed12345-x-720-z-400",
+                12_345L, -720, -400);
+    }
+
+    private static void renderSlopeCloseup(
+            Path output, String name, long seed, int centerX, int centerZ) throws IOException {
+        BaseTerrainSampler terrain = new BaseTerrainSampler(seed, new WorldBounds(5_000));
+        int size = 512;
+        int[][] heights = new int[size + 4][size + 4];
+        for (int x = 0; x < size + 4; x++) {
+            for (int z = 0; z < size + 4; z++) {
+                heights[x][z] = terrain.sample(
+                        centerX + x - size / 2 - 2,
+                        centerZ + z - size / 2 - 2).height();
+            }
+        }
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+        for (int x = 0; x < size; x++) {
+            for (int z = 0; z < size; z++) {
+                int height = heights[x + 2][z + 2];
+                int diagonalSlope = heights[x][z] - heights[x + 4][z + 4];
+                int contour = height != heights[x + 3][z + 2]
+                        || height != heights[x + 2][z + 3] ? -16 : 5;
+                int light = clamp(104 + (height - 70) + diagonalSlope * 7 + contour);
+                image.setRGB(x, z, new Color(
+                        clamp(light - 28), light, clamp(light - 42)).getRGB());
+            }
+        }
+        ImageIO.write(image, "png", output.resolve(name + ".png").toFile());
     }
 
     private static void render(
