@@ -2,6 +2,8 @@ package dev.worldgenerator;
 
 import dev.worldgenerator.biome.WorldGenBiomeProvider;
 import dev.worldgenerator.command.CommandSuggestions;
+import dev.worldgenerator.command.PreviewCommandHandler;
+import dev.worldgenerator.preview.PreviewWorldManager;
 import dev.worldgenerator.terrain.SafeSpawnLocator;
 import dev.worldgenerator.terrain.SpawnPoint;
 import dev.worldgenerator.terrain.WorldGenChunkGenerator;
@@ -31,9 +33,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class WorldGeneratorPlugin extends JavaPlugin {
+    private PreviewCommandHandler previewCommand;
+
     @Override
     public void onEnable() {
-        getLogger().info("WorldGenerator 0.6 modern military blueprint enabled.");
+        previewCommand = new PreviewCommandHandler(new PreviewWorldManager(this));
+        getLogger().info("WorldGenerator 0.6.1 blueprint preview foundation enabled.");
     }
 
     @Override
@@ -56,6 +61,9 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
             @NotNull Command command,
             @NotNull String label,
             @NotNull String[] args) {
+        if (args.length >= 1 && args[0].equalsIgnoreCase("preview")) {
+            return previewCommand.execute(sender, label, args);
+        }
         if (args.length < 2 || !args[0].equalsIgnoreCase("create")) {
             return handleNonCreateCommand(sender, label, args);
         }
@@ -127,8 +135,11 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
         }
 
         if (args.length == 1) {
-            return matchingPrefix(List.of("create", "tp", "delete", "lobby", "list"), args[0]);
+            return CommandSuggestions.matchingPrefix(
+                    List.of("create", "tp", "delete", "lobby", "list", "preview"), args[0]);
         }
+
+        if (args[0].equalsIgnoreCase("preview")) return previewCommand.suggestions(args);
 
         if (args.length == 2
                 && (args[0].equalsIgnoreCase("tp") || args[0].equalsIgnoreCase("delete"))) {
@@ -141,31 +152,22 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
                     worldNames.add(fullKey.substring(ownNamespace.length()));
                 }
             }
-            return matchingPrefix(worldNames, args[1]);
+            return CommandSuggestions.matchingPrefix(worldNames, args[1]);
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("delete")) {
-            return matchingPrefix(List.of("confirm"), args[2]);
+            return CommandSuggestions.matchingPrefix(List.of("confirm"), args[2]);
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("create")) {
-            return matchingPrefix(CommandSuggestions.createArgument(2), args[2]);
+            return CommandSuggestions.matchingPrefix(CommandSuggestions.createArgument(2), args[2]);
         }
 
         if (args.length == 4 && args[0].equalsIgnoreCase("create")) {
-            return matchingPrefix(CommandSuggestions.createArgument(3), args[3]);
+            return CommandSuggestions.matchingPrefix(CommandSuggestions.createArgument(3), args[3]);
         }
 
         return List.of();
-    }
-
-    private static List<String> matchingPrefix(List<String> candidates, String input) {
-        String prefix = input.toLowerCase(Locale.ROOT);
-        return candidates.stream()
-                .filter(candidate -> candidate.toLowerCase(Locale.ROOT).startsWith(prefix))
-                .distinct()
-                .sorted()
-                .toList();
     }
 
     private boolean handleNonCreateCommand(CommandSender sender, String label, String[] args) {
@@ -207,6 +209,7 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
         sender.sendMessage("/" + label + " delete <name> confirm");
         sender.sendMessage("/" + label + " lobby");
         sender.sendMessage("/" + label + " list");
+        sender.sendMessage("/" + label + " preview [blueprint|rebuild|clear] [rotation] [mirror]");
         return true;
     }
 

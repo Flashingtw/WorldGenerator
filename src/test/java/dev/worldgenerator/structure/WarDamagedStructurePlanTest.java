@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 class WarDamagedStructurePlanTest {
     @Test
-    void poiSizesSelectTheThreeBuildingArchetypes() {
+    void rejectedLargeArchetypeIsNotPlaced() {
         AdventureMapPlan map = new AdventureMapPlan(List.of(
                 new MapPoi(-400, 72, 0, PoiType.SMALL),
                 new MapPoi(0, 73, 0, PoiType.MEDIUM),
@@ -28,8 +28,7 @@ class WarDamagedStructurePlanTest {
         WarDamagedStructurePlan plan = WarDamagedStructurePlan.create(123L, map);
         assertEquals(List.of(
                         StructureType.GAS_STATION,
-                        StructureType.WAREHOUSE,
-                        StructureType.MILITARY_COMPOUND),
+                        StructureType.WAREHOUSE),
                 plan.placements().stream().map(StructurePlacement::type).toList());
     }
 
@@ -50,8 +49,6 @@ class WarDamagedStructurePlanTest {
                 StructureMaterial.GLASS, StructureMaterial.WARNING);
         assertContainsExpectedMaterials(PoiType.MEDIUM,
                 StructureMaterial.BRICK, StructureMaterial.RUSTED_METAL);
-        assertContainsExpectedMaterials(PoiType.LARGE,
-                StructureMaterial.IRON_BARS, StructureMaterial.OLIVE_PANEL);
     }
 
     @Test
@@ -67,11 +64,11 @@ class WarDamagedStructurePlanTest {
 
     @Test
     void everyEditIsOwnedByExactlyOneRequestedChunk() {
-        WarDamagedStructurePlan plan = WarDamagedStructurePlan.create(456L, onePoi(PoiType.LARGE));
+        WarDamagedStructurePlan plan = WarDamagedStructurePlan.create(456L, onePoi(PoiType.MEDIUM));
         Set<String> coordinates = new HashSet<>();
         int total = 0;
-        for (int chunkX = -6; chunkX <= 6; chunkX++) {
-            for (int chunkZ = -6; chunkZ <= 6; chunkZ++) {
+        for (int chunkX = -4; chunkX <= 4; chunkX++) {
+            for (int chunkZ = -4; chunkZ <= 4; chunkZ++) {
                 for (StructureBlock block : plan.blocksInChunk(chunkX, chunkZ)) {
                     assertEquals(chunkX, Math.floorDiv(block.x(), 16));
                     assertEquals(chunkZ, Math.floorDiv(block.z(), 16));
@@ -80,24 +77,19 @@ class WarDamagedStructurePlanTest {
                 }
             }
         }
-        assertTrue(total > 25_000, "military compound should span many populated chunks");
+        assertTrue(total > 10_000, "warehouse should span many populated chunks");
     }
 
     @Test
-    void generatedIronBarsCarryExplicitNeighborConnections() {
-        List<StructureBlock> blocks = allBlocks(
-                WarDamagedStructurePlan.create(456L, onePoi(PoiType.LARGE)));
-        List<StructureBlock> bars = blocks.stream()
-                .filter(block -> block.material() == StructureMaterial.IRON_BARS)
-                .toList();
-        assertFalse(bars.isEmpty());
-        assertTrue(bars.stream().allMatch(block -> block.horizontalConnections() != 0),
-                "ChunkData does not run neighbor physics; every iron bar must encode its faces");
+    void largePoisStayEmptyUntilAnAuthoredBlueprintIsAccepted() {
+        WarDamagedStructurePlan plan = WarDamagedStructurePlan.create(456L, onePoi(PoiType.LARGE));
+        assertTrue(plan.placements().isEmpty());
+        assertTrue(plan.blocksInChunk(0, 0).isEmpty());
     }
 
     @Test
     void sitesDoNotFillTheirEntireRectangularEnvelope() {
-        for (PoiType type : PoiType.values()) {
+        for (PoiType type : List.of(PoiType.SMALL, PoiType.MEDIUM)) {
             WarDamagedStructurePlan plan = WarDamagedStructurePlan.create(456L, onePoi(type));
             StructurePlacement placement = plan.placements().getFirst();
             long groundEdits = allBlocks(plan).stream()
@@ -146,15 +138,12 @@ class WarDamagedStructurePlanTest {
                 StructureMaterial.SHELF, StructureMaterial.TABLE, StructureMaterial.MACHINE);
         assertInteriorDensity(PoiType.MEDIUM, 220,
                 StructureMaterial.SHELF, StructureMaterial.TABLE, StructureMaterial.CHAIR);
-        assertInteriorDensity(PoiType.LARGE, 300,
-                StructureMaterial.SHELF, StructureMaterial.CABINET, StructureMaterial.MACHINE);
     }
 
     @Test
     void warDamageCreatesSubstantialRubbleAndScorchZones() {
         assertDamageDensity(PoiType.SMALL, 20);
         assertDamageDensity(PoiType.MEDIUM, 70);
-        assertDamageDensity(PoiType.LARGE, 180);
     }
 
     @Test

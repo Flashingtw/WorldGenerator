@@ -74,3 +74,28 @@ armory, helipad, clipped security perimeter, watchtowers, HESCO barriers, and
 purpose-built interiors. The site retains natural ground between authored lanes
 and foundations, and the existing seed-driven condition system applies only
 localized weathering or damage on top of the coherent intact design.
+
+## Blueprint preview (v0.6.1)
+
+The rejected v0.6.0 military compound is disabled in normal world generation.
+Large POI terrain and entrances remain reserved, but no military structure is
+placed until an authored replacement passes visual review.
+
+v0.6.1 introduces a platform-neutral voxel-blueprint module and an isolated
+Paper preview world. Authored `.vbp` resources retain anchors, sparse layers,
+directional facing, upper/lower block parts, open state, and explicit pane or
+bar connections through rotation and mirroring. Paper-specific BlockData is
+created only by the preview adapter.
+
+As an operator, use:
+
+```text
+/wg preview
+/wg preview rotation_lab 90
+/wg preview rotation_lab 270 mirror
+/wg preview rebuild 0
+/wg preview clear
+```
+
+`rotation_lab` is an acceptance rig for doors, stairs, slabs, trapdoors, panes,
+bars, lights, rotation, and mirroring. It is deliberately not a building.

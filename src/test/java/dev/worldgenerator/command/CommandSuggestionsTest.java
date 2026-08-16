@@ -20,4 +20,14 @@ class CommandSuggestionsTest {
                 List.of("5000x5000", "10000x10000", "unlimited"),
                 CommandSuggestions.createArgument(3));
     }
+
+    @Test
+    void previewSuggestionsAndRotationParserAreDeterministic() {
+        assertEquals(List.of("clear", "rebuild", "rotation_lab"),
+                CommandSuggestions.matchingPrefix(
+                        List.of("rotation_lab", "rebuild", "clear"), ""));
+        assertEquals(3, PreviewCommandHandler.parseRotation("270"));
+        assertEquals(List.of("rotation_lab"),
+                CommandSuggestions.matchingPrefix(List.of("rotation_lab", "rebuild"), "rot"));
+    }
 }

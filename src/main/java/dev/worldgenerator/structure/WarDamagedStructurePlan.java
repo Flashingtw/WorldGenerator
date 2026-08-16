@@ -21,8 +21,11 @@ public final class WarDamagedStructurePlan {
             StructureType type = switch (poi.type()) {
                 case SMALL -> StructureType.GAS_STATION;
                 case MEDIUM -> StructureType.WAREHOUSE;
-                case LARGE -> StructureType.MILITARY_COMPOUND;
+                case LARGE -> null;
             };
+            // v0.6.0's compound was rejected visually. Large sites deliberately remain
+            // empty until the authored blueprint module supplies an accepted replacement.
+            if (type == null) continue;
             int rotation = roadFacing(poi, map.roads(), seed);
             long damageSeed = hash(seed, poi.x(), poi.z(), 0x5A17);
             result.add(new StructurePlacement(
