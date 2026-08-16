@@ -9,7 +9,7 @@ final class WarDamagedBlueprint {
         StructureMaterial raw = switch (placement.type()) {
             case GAS_STATION -> gasStation(x, y, z);
             case WAREHOUSE -> warehouse(x, y, z);
-            case MILITARY_COMPOUND -> militaryCompound(x, y, z);
+            case MILITARY_COMPOUND -> ModernMilitaryBlueprint.materialAt(x, y, z);
         };
         return damage(placement, x, y, z, raw);
     }

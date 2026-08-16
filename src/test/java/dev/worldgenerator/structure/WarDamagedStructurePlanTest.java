@@ -51,7 +51,7 @@ class WarDamagedStructurePlanTest {
         assertContainsExpectedMaterials(PoiType.MEDIUM,
                 StructureMaterial.BRICK, StructureMaterial.RUSTED_METAL);
         assertContainsExpectedMaterials(PoiType.LARGE,
-                StructureMaterial.IRON_BARS, StructureMaterial.WOOD);
+                StructureMaterial.IRON_BARS, StructureMaterial.OLIVE_PANEL);
     }
 
     @Test
@@ -204,7 +204,11 @@ class WarDamagedStructurePlanTest {
                 || block.material() == StructureMaterial.CHAIR
                 || block.material() == StructureMaterial.CABINET
                 || block.material() == StructureMaterial.CRATE
-                || block.material() == StructureMaterial.MACHINE).count();
+                || block.material() == StructureMaterial.MACHINE
+                || block.material() == StructureMaterial.BED
+                || block.material() == StructureMaterial.LOCKER
+                || block.material() == StructureMaterial.SCREEN
+                || block.material() == StructureMaterial.LIGHT).count();
         assertTrue(details >= minimum, type + " interior is too empty: " + details);
     }
 

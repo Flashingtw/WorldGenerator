@@ -62,3 +62,11 @@ crates, shelving, and facing machinery) instead of solid placeholder rows.
 The v0.5.4 road handoff stops external gravel at each site's authored entrance
 instead of continuing the road segment through the POI center. Military compound
 lanes, forecourts, and loading aprons now fully own their internal surface.
+
+The v0.6.0 large-POI pass replaces the generic compound with a dedicated modern
+military installation blueprint. It combines a ridged metal-panel hangar, open
+motor pool, offset checkpoint, modular barracks, L-shaped headquarters, hardened
+armory, helipad, clipped security perimeter, watchtowers, HESCO barriers, and
+purpose-built interiors. The site retains natural ground between authored lanes
+and foundations, and the existing seed-driven condition system applies only
+localized weathering or damage on top of the coherent intact design.

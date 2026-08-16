@@ -160,6 +160,14 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
             case CABINET -> Material.BARREL;
             case CRATE -> Material.STRIPPED_DARK_OAK_WOOD;
             case MACHINE -> Material.BLAST_FURNACE;
+            case OLIVE_PANEL -> Material.GREEN_TERRACOTTA;
+            case WHITE_PANEL -> Material.WHITE_CONCRETE;
+            case FLOOR -> Material.SMOOTH_STONE;
+            case BED -> Material.LIGHT_GRAY_WOOL;
+            case LOCKER -> Material.IRON_BLOCK;
+            case SCREEN -> Material.BLACK_STAINED_GLASS;
+            case LIGHT -> Material.SEA_LANTERN;
+            case HESCO -> Material.SMOOTH_SANDSTONE;
         };
     }
 

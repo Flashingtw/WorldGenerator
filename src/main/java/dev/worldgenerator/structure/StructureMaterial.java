@@ -25,5 +25,13 @@ public enum StructureMaterial {
     CHAIR,
     CABINET,
     CRATE,
-    MACHINE
+    MACHINE,
+    OLIVE_PANEL,
+    WHITE_PANEL,
+    FLOOR,
+    BED,
+    LOCKER,
+    SCREEN,
+    LIGHT,
+    HESCO
 }

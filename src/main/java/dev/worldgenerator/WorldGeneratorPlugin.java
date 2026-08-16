@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 public final class WorldGeneratorPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
-        getLogger().info("WorldGenerator 0.5.4 gated site-road handoff enabled.");
+        getLogger().info("WorldGenerator 0.6 modern military blueprint enabled.");
     }
 
     @Override
