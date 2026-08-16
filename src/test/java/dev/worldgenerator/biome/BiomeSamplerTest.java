@@ -28,18 +28,31 @@ class BiomeSamplerTest {
     }
 
     @Test
-    void noSingleBiomeOccupiesMostOfALongTransect() {
-        BiomeSampler sampler = new BiomeSampler(123L);
+    void noSingleBiomeOccupiesMostOfLongTransects() {
+        for (long seed : new long[] {1L, 123L, 12_345L}) {
+            BiomeSampler sampler = new BiomeSampler(seed);
+            for (int fixed : new int[] {-9_000, 0, 9_000}) {
+                assertTrue(longestRun(sampler, fixed, true) <= 2_800,
+                        "single x-axis biome run exceeded 2800 blocks for seed " + seed);
+                assertTrue(longestRun(sampler, fixed, false) <= 2_800,
+                        "single z-axis biome run exceeded 2800 blocks for seed " + seed);
+            }
+        }
+    }
+
+    private static int longestRun(BiomeSampler sampler, int fixed, boolean alongX) {
         BiomeKind previous = null;
         int run = 0;
         int longestRun = 0;
-        for (int x = -12_000; x <= 12_000; x += 100) {
-            BiomeKind current = sampler.sample(x, 70, 10_000);
+        for (int changing = -12_000; changing <= 12_000; changing += 100) {
+            BiomeKind current = alongX
+                    ? sampler.sample(changing, 70, fixed)
+                    : sampler.sample(fixed, 70, changing);
             run = current == previous ? run + 1 : 1;
             longestRun = Math.max(longestRun, run);
             previous = current;
         }
-        assertTrue(longestRun * 100 <= 4_000, "single biome run was " + longestRun * 100 + " blocks");
+        return longestRun * 100;
     }
 
     @Test

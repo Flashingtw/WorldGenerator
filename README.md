@@ -99,3 +99,25 @@ As an operator, use:
 
 `rotation_lab` is an acceptance rig for doors, stairs, slabs, trapdoors, panes,
 bars, lights, rotation, and mirroring. It is deliberately not a building.
+
+## Macro terrain (v0.7.0)
+
+Natural geography now passes through one macro-terrain module before shared
+surface relief is applied. Finite maps receive an irregular connected island,
+seeded broad headlands and bays, large lowland reserves, and several curved,
+separated mountain chains with tapered and locally warped profiles. The
+10000x10000 layout uses four geographic mountain sectors while 5000x5000 uses
+three, preventing every range from converging at the map center.
+
+Unlimited terrain uses the same ocean-floor, lowland, hill, foothill, ridge, and
+peak composition instead of the former unrelated height formula. Its mountain
+regions are sparse uplift zones rather than a world-spanning ridge web.
+
+Climate cells were reduced to a 720-block base scale with tighter boundary warp
+and stronger local variation. Automated transects across several seeds cap a
+single unchanged biome run at 2800 blocks, avoiding continent-sized frozen or
+otherwise uniform biome areas while retaining coherent regions.
+
+Run `gradle renderTerrainPreviews` to produce relief and grayscale height maps in
+`build/reports/terrain/` for manual visual QA. These diagnostics cover two
+5000x5000 seeds, one 10000x10000 seed, and one unlimited-world window.

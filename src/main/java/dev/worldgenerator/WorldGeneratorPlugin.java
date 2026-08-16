@@ -38,7 +38,7 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         previewCommand = new PreviewCommandHandler(new PreviewWorldManager(this));
-        getLogger().info("WorldGenerator 0.6.1 blueprint preview foundation enabled.");
+        getLogger().info("WorldGenerator 0.7 macro terrain layout enabled.");
     }
 
     @Override

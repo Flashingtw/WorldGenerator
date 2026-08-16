@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "dev.worldgenerator"
-version = "0.6.1-SNAPSHOT"
+version = "0.7.0-SNAPSHOT"
 val pluginVersion = version
 
 repositories {
@@ -34,4 +34,13 @@ tasks.processResources {
 
 tasks.compileJava {
     options.compilerArgs.add("-Xlint:deprecation")
+}
+
+tasks.register<JavaExec>("renderTerrainPreviews") {
+    group = "verification"
+    description = "Renders deterministic v0.7 terrain and height-map PNG previews."
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("dev.worldgenerator.terrain.TerrainPreviewRenderer")
+    args(layout.buildDirectory.dir("reports/terrain").get().asFile.absolutePath)
 }

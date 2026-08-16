@@ -32,4 +32,22 @@ class ClimateRegionSamplerTest {
                 new ClimateRegionSampler(1L).sample(500, 500),
                 new ClimateRegionSampler(2L).sample(500, 500));
     }
+
+    @Test
+    void individualClimateRegionsStayWithinLocalExplorationScale() {
+        for (long seed : new long[] {1L, 123L, 12_345L}) {
+            ClimateRegionSampler sampler = new ClimateRegionSampler(seed);
+            long previous = Long.MIN_VALUE;
+            int run = 0;
+            int longest = 0;
+            for (int x = -12_000; x <= 12_000; x += 100) {
+                long current = sampler.sample(x, 2_137).regionId();
+                run = current == previous ? run + 1 : 1;
+                longest = Math.max(longest, run);
+                previous = current;
+            }
+            assertTrue(longest * 100 <= 1_600,
+                    "climate region exceeded 1600 blocks for seed " + seed);
+        }
+    }
 }

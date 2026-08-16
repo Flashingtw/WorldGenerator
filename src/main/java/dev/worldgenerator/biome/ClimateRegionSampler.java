@@ -7,7 +7,7 @@ import dev.worldgenerator.terrain.Noise2D;
  * regions coherent while preventing one noise threshold from extending forever.
  */
 public final class ClimateRegionSampler {
-    public static final int REGION_SIZE = 900;
+    public static final int REGION_SIZE = 720;
     private static final double SITE_JITTER = 0.34;
 
     private final long seed;
@@ -23,8 +23,8 @@ public final class ClimateRegionSampler {
     }
 
     public ClimateSample sample(int blockX, int blockZ) {
-        double warpedX = blockX + boundaryWarp.fractal(blockX / 1_700.0, blockZ / 1_700.0, 3, 2.0, 0.5) * 230.0;
-        double warpedZ = blockZ + boundaryWarp.fractal((blockX + 9_173) / 1_700.0, (blockZ - 4_291) / 1_700.0, 3, 2.0, 0.5) * 230.0;
+        double warpedX = blockX + boundaryWarp.fractal(blockX / 1_350.0, blockZ / 1_350.0, 3, 2.0, 0.5) * 145.0;
+        double warpedZ = blockZ + boundaryWarp.fractal((blockX + 9_173) / 1_350.0, (blockZ - 4_291) / 1_350.0, 3, 2.0, 0.5) * 145.0;
         int baseCellX = fastFloor(warpedX / REGION_SIZE);
         int baseCellZ = fastFloor(warpedZ / REGION_SIZE);
 
@@ -46,10 +46,10 @@ public final class ClimateRegionSampler {
             }
         }
 
-        double globalTemperature = temperature.fractal(nearestX / 4.5, nearestZ / 4.5, 3, 2.0, 0.52);
-        double globalHumidity = humidity.fractal(nearestX / 4.0, nearestZ / 4.0, 3, 2.0, 0.52);
-        double localTemperature = signedHash(nearestX, nearestZ, 47) * 0.42;
-        double localHumidity = signedHash(nearestX, nearestZ, 71) * 0.42;
+        double globalTemperature = temperature.fractal(nearestX / 5.0, nearestZ / 5.0, 3, 2.0, 0.52) * 0.68;
+        double globalHumidity = humidity.fractal(nearestX / 4.5, nearestZ / 4.5, 3, 2.0, 0.52) * 0.68;
+        double localTemperature = signedHash(nearestX, nearestZ, 47) * 0.56;
+        double localHumidity = signedHash(nearestX, nearestZ, 71) * 0.56;
         long regionId = mix(seed ^ ((long) nearestX * 0x632BE59BD9B4E019L)
                 ^ ((long) nearestZ * 0x9E3779B97F4A7C15L));
         return new ClimateSample(
