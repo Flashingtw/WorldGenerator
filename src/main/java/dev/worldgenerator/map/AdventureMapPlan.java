@@ -38,14 +38,27 @@ public final class AdventureMapPlan {
         double roadStrength = 0.0;
         double poiStrength = 0.0;
 
+        double strongestShoulder = 0.0;
+        double roadTargetHeight = baseHeight;
+
         for (RoadSegment road : roads) {
-            double edgeOffset = roadEdgeNoise.fractal(x / 92.0, z / 92.0, 3, 2.0, 0.52) * 2.2;
-            double distance = Math.max(0.0, road.distanceTo(x, z) + edgeOffset);
-            double shoulder = 1.0 - smoothstep(7.0, 24.0, distance);
-            if (shoulder > 0.0) {
-                height = lerp(height, road.targetHeight(x, z), shoulder * 0.92);
-                roadStrength = Math.max(roadStrength, 1.0 - smoothstep(4.5, 8.0, distance));
+            RoadSegment.Projection projection = road.projection(x, z);
+            RoadKind kind = road.kindAt(projection);
+            double edgeScale = kind == RoadKind.TRUNK ? 1.4 : kind == RoadKind.BRANCH ? 1.8 : 1.2;
+            double edgeOffset = roadEdgeNoise.fractal(
+                    x / 108.0, z / 108.0, 3, 2.0, 0.50) * edgeScale;
+            double distance = Math.max(0.0, projection.distance() + edgeOffset);
+            double shoulder = 1.0 - smoothstep(
+                    kind.coreRadius() + 2.0, kind.shoulderRadius(), distance);
+            if (shoulder > strongestShoulder) {
+                strongestShoulder = shoulder;
+                roadTargetHeight = projection.targetHeight();
             }
+            roadStrength = Math.max(roadStrength, 1.0 - smoothstep(
+                    kind.coreRadius() - 1.0, kind.coreRadius() + 1.5, distance));
+        }
+        if (strongestShoulder > 0.0) {
+            height = lerp(height, roadTargetHeight, strongestShoulder * 0.90);
         }
 
         for (MapPoi poi : pointsOfInterest) {

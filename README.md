@@ -172,3 +172,18 @@ Regression tests now pair a 0.3% cap on small enclosed lowland terrace
 fragments with an 80-block cap on straight contour runs. Adjacent seeds are
 also sampled across the entire finite map and must differ in both height and
 terrain class, rather than merely at one coordinate.
+
+## Terrain-aware road network (v0.8.0)
+
+Finite maps now plan a connected hierarchy of trunk, branch, and POI access
+roads. Selected graph edges are routed over a 48-block navigation grid whose
+cost penalizes water, steep grades, high elevation, and mountain cores. The
+result is simplified, given low-frequency seeded coordinate variation, rounded,
+checked against the landscape, and graded to a maximum 10.5% centerline slope.
+
+Every POI owns one deterministic entrance shared by all connected routes. Road
+centerlines stop at that entrance and the POI mask prevents external gravel
+from entering the site core. Trunks, branches, and access sections use distinct
+driving-scale widths and shoulders. Automated acceptance covers three seeds at
+both 5000 and 10000 blocks; the rendered road-network preview overlays route
+hierarchy and POIs on the generated relief map.

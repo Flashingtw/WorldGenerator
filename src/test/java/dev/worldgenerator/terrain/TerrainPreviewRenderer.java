@@ -5,7 +5,13 @@ import dev.worldgenerator.biome.BiomeSampler;
 import dev.worldgenerator.biome.SurfaceKind;
 import dev.worldgenerator.biome.SurfaceSample;
 import dev.worldgenerator.biome.SurfaceSampler;
+import dev.worldgenerator.map.RoadKind;
+import dev.worldgenerator.map.RoadNode;
+import dev.worldgenerator.map.RoadSegment;
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +35,68 @@ public final class TerrainPreviewRenderer {
         render(output, "unlimited-seed12345", 12_345L, WorldBounds.UNLIMITED, 24_000);
         renderSlopeCloseup(output, "slope-seed12345-x-720-z-400",
                 12_345L, -720, -400);
+        renderRoadNetwork(output, "roads-finite-5000-seed12345", 12_345L, 5_000);
+    }
+
+    private static void renderRoadNetwork(
+            Path output, String name, long seed, int mapSize) throws IOException {
+        BaseTerrainSampler base = new BaseTerrainSampler(seed, new WorldBounds(mapSize));
+        TerrainSampler terrain = new TerrainSampler(seed, new WorldBounds(mapSize));
+        BufferedImage image = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_RGB);
+        for (int pixelX = 0; pixelX < IMAGE_SIZE; pixelX++) {
+            int x = coordinate(pixelX, mapSize);
+            for (int pixelZ = 0; pixelZ < IMAGE_SIZE; pixelZ++) {
+                int z = coordinate(pixelZ, mapSize);
+                image.setRGB(pixelX, pixelZ, reliefColor(base.sample(x, z)).getRGB());
+            }
+        }
+
+        Graphics2D graphics = image.createGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        for (RoadSegment road : terrain.plan().roads()) drawRoad(graphics, road, mapSize, true);
+        for (RoadSegment road : terrain.plan().roads()) drawRoad(graphics, road, mapSize, false);
+        for (var poi : terrain.plan().pointsOfInterest()) {
+            int x = pixel(poi.x(), mapSize);
+            int z = pixel(poi.z(), mapSize);
+            int radius = Math.max(3, (int) Math.round(poi.type().radius()
+                    * IMAGE_SIZE / (double) mapSize));
+            graphics.setColor(new Color(49, 47, 42));
+            graphics.fillOval(x - radius, z - radius, radius * 2, radius * 2);
+            graphics.setColor(new Color(211, 194, 142));
+            graphics.drawOval(x - radius, z - radius, radius * 2, radius * 2);
+        }
+        graphics.dispose();
+        ImageIO.write(image, "png", output.resolve(name + ".png").toFile());
+    }
+
+    private static void drawRoad(
+            Graphics2D graphics, RoadSegment road, int mapSize, boolean shoulder) {
+        for (int index = 1; index < road.centerline().size(); index++) {
+            RoadNode from = road.centerline().get(index - 1);
+            RoadNode to = road.centerline().get(index);
+            int middleX = (int) Math.round((from.x() + to.x()) * 0.5);
+            int middleZ = (int) Math.round((from.z() + to.z()) * 0.5);
+            RoadKind kind = road.kindAt(middleX, middleZ);
+            double radius = shoulder ? kind.shoulderRadius() : kind.coreRadius();
+            float width = Math.max(1.0f,
+                    (float) (radius * 2.0 * IMAGE_SIZE / mapSize));
+            graphics.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND,
+                    BasicStroke.JOIN_ROUND));
+            graphics.setColor(shoulder ? new Color(88, 78, 62)
+                    : switch (kind) {
+                        case TRUNK -> new Color(176, 159, 126);
+                        case BRANCH -> new Color(155, 135, 101);
+                        case ACCESS -> new Color(129, 112, 86);
+                    });
+            graphics.drawLine(pixel(from.x(), mapSize), pixel(from.z(), mapSize),
+                    pixel(to.x(), mapSize), pixel(to.z(), mapSize));
+        }
+    }
+
+    private static int pixel(double coordinate, int viewedSize) {
+        return (int) Math.round((coordinate + viewedSize / 2.0)
+                / viewedSize * IMAGE_SIZE);
     }
 
     private static void renderSlopeCloseup(

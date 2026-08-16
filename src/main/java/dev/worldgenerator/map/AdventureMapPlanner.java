@@ -19,7 +19,7 @@ public final class AdventureMapPlanner {
         if (!bounds.isLimited()) return AdventureMapPlan.empty();
         List<Candidate> candidates = findCandidates(seed, bounds.size(), terrain);
         List<MapPoi> points = selectPoints(candidates, bounds.size());
-        return new AdventureMapPlan(seed, points, connect(points, terrain));
+        return new AdventureMapPlan(seed, points, connect(seed, bounds.size(), points, terrain));
     }
 
     private static List<Candidate> findCandidates(long seed, int size, BaseTerrainSampler terrain) {
@@ -67,9 +67,10 @@ public final class AdventureMapPlanner {
         return List.copyOf(result);
     }
 
-    private static List<RoadSegment> connect(List<MapPoi> points, BaseTerrainSampler terrain) {
+    private static List<RoadSegment> connect(
+            long seed, int mapSize, List<MapPoi> points, BaseTerrainSampler terrain) {
         if (points.size() < 2) return List.of();
-        List<RoadSegment> roads = new ArrayList<>();
+        List<Edge> selected = new ArrayList<>();
         Set<Integer> connected = new HashSet<>();
         Set<Long> edges = new HashSet<>();
         connected.add(0);
@@ -88,7 +89,7 @@ public final class AdventureMapPlanner {
                     }
                 }
             }
-            addEdge(points, roads, edges, bestFrom, bestTo);
+            addEdge(selected, edges, bestFrom, bestTo);
             connected.add(bestTo);
         }
 
@@ -109,9 +110,65 @@ public final class AdventureMapPlanner {
                 }
             }
             if (bestFrom < 0) break;
-            addEdge(points, roads, edges, bestFrom, bestTo);
+            addEdge(selected, edges, bestFrom, bestTo);
+        }
+
+        int[] degree = new int[points.size()];
+        for (Edge edge : selected) {
+            degree[edge.from()]++;
+            degree[edge.to()]++;
+        }
+        List<Integer> ranked = new ArrayList<>();
+        for (int index = 0; index < selected.size(); index++) ranked.add(index);
+        ranked.sort((first, second) -> {
+            double firstScore = trunkScore(selected.get(first), points, degree);
+            double secondScore = trunkScore(selected.get(second), points, degree);
+            int comparison = Double.compare(secondScore, firstScore);
+            return comparison != 0 ? comparison : Integer.compare(first, second);
+        });
+        Set<Integer> trunks = new HashSet<>(ranked.subList(
+                0, Math.max(1, selected.size() / 3)));
+
+        List<RoadSegment> roads = new ArrayList<>();
+        for (int index = 0; index < selected.size(); index++) {
+            Edge edge = selected.get(index);
+            MapPoi from = points.get(edge.from());
+            MapPoi to = points.get(edge.to());
+            RoadNode start = entrance(seed, from);
+            RoadNode goal = entrance(seed, to);
+            RoadKind kind = trunks.contains(index) ? RoadKind.TRUNK : RoadKind.BRANCH;
+            roads.add(new RoadSegment(from, to, kind,
+                    TerrainRoadRouter.route(seed, mapSize, terrain, start, goal)));
         }
         return List.copyOf(roads);
+    }
+
+    private static double trunkScore(Edge edge, List<MapPoi> points, int[] degree) {
+        MapPoi from = points.get(edge.from());
+        MapPoi to = points.get(edge.to());
+        double distance = Math.hypot(to.x() - from.x(), to.z() - from.z());
+        double largeBonus = (from.type() == PoiType.LARGE ? 900.0 : 0.0)
+                + (to.type() == PoiType.LARGE ? 900.0 : 0.0);
+        return distance + largeBonus + (degree[edge.from()] + degree[edge.to()]) * 180.0;
+    }
+
+    private static RoadNode entrance(long seed, MapPoi poi) {
+        double angle;
+        if (Math.hypot(poi.x(), poi.z()) >= 120.0) {
+            angle = Math.atan2(-poi.z(), -poi.x())
+                    + signedUnit(seed, poi.x(), poi.z(), 97) * 0.34;
+        } else {
+            angle = unit(seed, poi.x(), poi.z(), 101) * Math.PI * 2.0;
+        }
+        double distance = switch (poi.type()) {
+            case SMALL -> 18.0;
+            case MEDIUM -> 26.0;
+            case LARGE -> 62.0;
+        };
+        return new RoadNode(
+                poi.x() + Math.cos(angle) * distance,
+                poi.y(),
+                poi.z() + Math.sin(angle) * distance);
     }
 
     private static double edgeCost(MapPoi from, MapPoi to, BaseTerrainSampler terrain) {
@@ -131,9 +188,8 @@ public final class AdventureMapPlanner {
         return distance + penalty;
     }
 
-    private static void addEdge(
-            List<MapPoi> points, List<RoadSegment> roads, Set<Long> edges, int from, int to) {
-        roads.add(new RoadSegment(points.get(from), points.get(to)));
+    private static void addEdge(List<Edge> selected, Set<Long> edges, int from, int to) {
+        selected.add(new Edge(from, to));
         edges.add(edgeKey(from, to));
     }
 
@@ -147,6 +203,14 @@ public final class AdventureMapPlanner {
         return (int) Math.floorMod(hash(seed, x, z, salt), magnitude * 2L + 1L) - magnitude;
     }
 
+    private static double signedUnit(long seed, int x, int z, int salt) {
+        return unit(seed, x, z, salt) * 2.0 - 1.0;
+    }
+
+    private static double unit(long seed, int x, int z, int salt) {
+        return (hash(seed, x, z, salt) >>> 11) * 0x1.0p-53;
+    }
+
     private static long hash(long seed, int x, int z, int salt) {
         long value = seed ^ ((long) x * 0x9E3779B97F4A7C15L)
                 ^ ((long) z * 0xC2B2AE3D27D4EB4FL) ^ salt;
@@ -156,5 +220,8 @@ public final class AdventureMapPlanner {
     }
 
     private record Candidate(int x, int y, int z, long priority) {
+    }
+
+    private record Edge(int from, int to) {
     }
 }

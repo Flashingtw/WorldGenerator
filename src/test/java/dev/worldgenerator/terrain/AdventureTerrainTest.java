@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.worldgenerator.map.MapPoi;
 import dev.worldgenerator.map.PoiType;
+import dev.worldgenerator.map.RoadKind;
+import dev.worldgenerator.map.RoadNode;
 import dev.worldgenerator.map.RoadSegment;
+import java.util.HashMap;
 import org.junit.jupiter.api.Test;
 
 class AdventureTerrainTest {
@@ -48,9 +51,64 @@ class AdventureTerrainTest {
                     "external gravel road must stop before POI interior at " + poi);
         }
         for (RoadSegment road : plan.roads()) {
-            int x = (road.from().x() + road.to().x()) / 2;
-            int z = (road.from().z() + road.to().z()) / 2;
+            RoadNode center = road.centerline().get(road.centerline().size() / 2);
+            int x = (int) Math.round(center.x());
+            int z = (int) Math.round(center.z());
             assertTrue(terrain.sample(x, z).roadStrength() > 0.90);
+        }
+    }
+
+    @Test
+    void roadNetworkHasStableEntrancesAndAVisibleHierarchy() {
+        TerrainSampler terrain = new TerrainSampler(SEED, new WorldBounds(5_000));
+        var plan = terrain.plan();
+        assertTrue(plan.roads().stream().anyMatch(road -> road.kind() == RoadKind.TRUNK));
+        assertTrue(plan.roads().stream().anyMatch(road -> road.kind() == RoadKind.BRANCH));
+
+        var entrances = new HashMap<MapPoi, RoadNode>();
+        int curved = 0;
+        for (RoadSegment road : plan.roads()) {
+            RoadNode first = road.centerline().get(0);
+            RoadNode last = road.centerline().get(road.centerline().size() - 1);
+            assertEquals(RoadKind.ACCESS,
+                    road.kindAt((int) Math.round(first.x()), (int) Math.round(first.z())));
+            assertEquals(RoadKind.ACCESS,
+                    road.kindAt((int) Math.round(last.x()), (int) Math.round(last.z())));
+            assertSameEntrance(entrances, road.from(), first);
+            assertSameEntrance(entrances, road.to(), last);
+            if (maximumDeviationFromChord(road.centerline()) >= 10.0) curved++;
+        }
+        assertTrue(curved >= plan.roads().size() / 3,
+                "too many routes remained straight: curved=" + curved
+                        + "/" + plan.roads().size());
+    }
+
+    @Test
+    void terrainAwareRoutesStayOnLandAndKeepDriveableGrades() {
+        BaseTerrainSampler base = new BaseTerrainSampler(SEED, new WorldBounds(5_000));
+        TerrainSampler terrain = new TerrainSampler(SEED, new WorldBounds(5_000));
+        for (RoadSegment road : terrain.plan().roads()) {
+            for (int index = 0; index < road.centerline().size(); index++) {
+                RoadNode node = road.centerline().get(index);
+                if (index == 0) continue;
+                RoadNode previous = road.centerline().get(index - 1);
+                double grade = Math.abs(node.y() - previous.y())
+                        / Math.max(1.0, node.horizontalDistanceTo(previous));
+                assertTrue(grade <= 0.106,
+                        "road grade=" + grade + " on " + road);
+                int samples = Math.max(1,
+                        (int) Math.ceil(node.horizontalDistanceTo(previous) / 24.0));
+                for (int step = 0; step <= samples; step++) {
+                    double amount = step / (double) samples;
+                    int x = (int) Math.round(previous.x() + (node.x() - previous.x()) * amount);
+                    int z = (int) Math.round(previous.z() + (node.z() - previous.z()) * amount);
+                    TerrainSample sample = base.sample(x, z);
+                    assertTrue(sample.height() > TerrainSampler.SEA_LEVEL + 1,
+                            "road entered water: " + road + " at " + x + "," + z);
+                    assertTrue(sample.mountainStrength() < 0.82,
+                            "road crossed a mountain core: " + road + " at " + x + "," + z);
+                }
+            }
         }
     }
 
@@ -74,5 +132,26 @@ class AdventureTerrainTest {
             assertTrue(plan.shape(entranceDistance, 0, 72).roadStrength() > 0.65,
                     type + " gravel stops before its authored entrance");
         }
+    }
+
+    private static void assertSameEntrance(
+            HashMap<MapPoi, RoadNode> entrances, MapPoi poi, RoadNode candidate) {
+        RoadNode existing = entrances.putIfAbsent(poi, candidate);
+        if (existing != null) assertEquals(existing, candidate, "unstable entrance for " + poi);
+    }
+
+    private static double maximumDeviationFromChord(java.util.List<RoadNode> nodes) {
+        RoadNode from = nodes.get(0);
+        RoadNode to = nodes.get(nodes.size() - 1);
+        double dx = to.x() - from.x();
+        double dz = to.z() - from.z();
+        double length = Math.max(1.0, Math.hypot(dx, dz));
+        double maximum = 0.0;
+        for (RoadNode node : nodes) {
+            double cross = Math.abs((node.x() - from.x()) * dz
+                    - (node.z() - from.z()) * dx);
+            maximum = Math.max(maximum, cross / length);
+        }
+        return maximum;
     }
 }

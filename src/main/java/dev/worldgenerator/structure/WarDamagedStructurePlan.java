@@ -4,6 +4,7 @@ import dev.worldgenerator.map.AdventureMapPlan;
 import dev.worldgenerator.map.MapPoi;
 import dev.worldgenerator.map.PoiType;
 import dev.worldgenerator.map.RoadSegment;
+import dev.worldgenerator.map.RoadNode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,22 +105,31 @@ public final class WarDamagedStructurePlan {
     }
 
     private static int roadFacing(MapPoi poi, List<RoadSegment> roads, long seed) {
-        MapPoi nearest = null;
+        RoadNode nearestEntrance = null;
         double bestDistance = Double.POSITIVE_INFINITY;
         for (RoadSegment road : roads) {
-            MapPoi other = null;
-            if (road.from().equals(poi)) other = road.to();
-            if (road.to().equals(poi)) other = road.from();
-            if (other == null) continue;
-            double distance = Math.hypot(other.x() - poi.x(), other.z() - poi.z());
+            RoadNode entrance = null;
+            if (road.from().equals(poi)) entrance = road.centerline().get(0);
+            if (road.to().equals(poi)) {
+                entrance = road.centerline().get(road.centerline().size() - 1);
+            }
+            if (entrance == null) continue;
+            double distance = Math.hypot(entrance.x() - poi.x(), entrance.z() - poi.z());
+            if (distance < 1.0) {
+                MapPoi other = road.from().equals(poi) ? road.to() : road.from();
+                entrance = new RoadNode(other.x(), other.y(), other.z());
+                distance = Math.hypot(entrance.x() - poi.x(), entrance.z() - poi.z());
+            }
             if (distance < bestDistance) {
                 bestDistance = distance;
-                nearest = other;
+                nearestEntrance = entrance;
             }
         }
-        if (nearest == null) return (int) Math.floorMod(hash(seed, poi.x(), poi.z(), 7), 4);
-        int dx = nearest.x() - poi.x();
-        int dz = nearest.z() - poi.z();
+        if (nearestEntrance == null) {
+            return (int) Math.floorMod(hash(seed, poi.x(), poi.z(), 7), 4);
+        }
+        double dx = nearestEntrance.x() - poi.x();
+        double dz = nearestEntrance.z() - poi.z();
         if (Math.abs(dx) > Math.abs(dz)) return dx > 0 ? 1 : 3;
         return dz > 0 ? 2 : 0;
     }
