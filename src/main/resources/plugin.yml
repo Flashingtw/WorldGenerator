@@ -8,7 +8,7 @@ load: STARTUP
 commands:
   worldgen:
     description: Create, list and switch custom generated worlds
-    usage: /worldgen <create|tp|lobby|list> [name] [seed]
+    usage: /worldgen <create|tp|delete|lobby|list> [name] [seed|size|confirm]
     aliases: [wg]
     permission: worldgenerator.admin
 permissions:

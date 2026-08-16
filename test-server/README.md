@@ -20,15 +20,20 @@ close the window while the server is saving.
 
 ```text
 /wg create terrain_a 12345
-/wg create terrain_b 67890
+/wg create terrain_b 67890 5000x5000
+/wg create terrain_c random 10000x10000
 /wg list
 /wg tp terrain_a
 /wg tp terrain_b
+/wg delete terrain_b confirm
 /wg lobby
 ```
 
 Press Tab after `/wg ` to complete subcommands. Press Tab after `/wg tp ` to
 list and complete all currently loaded worlds.
+
+Delete only accepts WorldGenerator worlds with no players inside. Deleted worlds
+are moved to `plugins/WorldGenerator/trash/` so accidental deletion is recoverable.
 
 Custom worlds are stored under the server's `lobby/dimensions/worldgenerator/`
 directory by Paper 26.1.2.

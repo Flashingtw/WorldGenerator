@@ -2,6 +2,7 @@ package dev.worldgenerator.biome;
 
 import java.util.Arrays;
 import java.util.List;
+import dev.worldgenerator.terrain.WorldBounds;
 import org.bukkit.block.Biome;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.WorldInfo;
@@ -16,7 +17,11 @@ public final class WorldGenBiomeProvider extends BiomeProvider {
     private final BiomeSampler sampler;
 
     public WorldGenBiomeProvider(long seed) {
-        sampler = new BiomeSampler(seed);
+        this(seed, WorldBounds.UNLIMITED);
+    }
+
+    public WorldGenBiomeProvider(long seed, WorldBounds bounds) {
+        sampler = new BiomeSampler(seed, bounds);
     }
 
     @Override
@@ -31,6 +36,7 @@ public final class WorldGenBiomeProvider extends BiomeProvider {
 
     static Biome toBukkitBiome(BiomeKind kind) {
         return switch (kind) {
+            case VOID -> Biome.THE_VOID;
             case DEEP_FROZEN_OCEAN -> Biome.DEEP_FROZEN_OCEAN;
             case FROZEN_OCEAN -> Biome.FROZEN_OCEAN;
             case DEEP_COLD_OCEAN -> Biome.DEEP_COLD_OCEAN;

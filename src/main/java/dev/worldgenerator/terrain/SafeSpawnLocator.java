@@ -3,16 +3,21 @@ package dev.worldgenerator.terrain;
 /** Finds a deterministic, moderate-height land spawn without loading chunks. */
 public final class SafeSpawnLocator {
     private static final int STEP = 64;
-    private static final int MAX_RADIUS = 4_096;
 
     private final TerrainSampler terrain;
+    private final int maxRadius;
 
     public SafeSpawnLocator(long seed) {
-        terrain = new TerrainSampler(seed);
+        this(seed, WorldBounds.UNLIMITED);
+    }
+
+    public SafeSpawnLocator(long seed, WorldBounds bounds) {
+        terrain = new TerrainSampler(seed, bounds);
+        maxRadius = bounds.spawnSearchRadius();
     }
 
     public SpawnPoint locate() {
-        for (int radius = 0; radius <= MAX_RADIUS; radius += STEP) {
+        for (int radius = 0; radius <= maxRadius; radius += STEP) {
             SpawnPoint best = null;
             double bestScore = Double.POSITIVE_INFINITY;
             int min = -radius;

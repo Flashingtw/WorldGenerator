@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $serverDirectory = $PSScriptRoot
 $projectDirectory = Split-Path -Parent $serverDirectory
 $javaExecutable = Join-Path $projectDirectory '.tools\jdk25\jdk-25.0.4+7\bin\java.exe'
-$pluginSource = Join-Path $projectDirectory 'build\libs\worldgenerator-0.2.0-SNAPSHOT.jar'
+$pluginSource = Join-Path $projectDirectory 'build\libs\worldgenerator-0.5.4-SNAPSHOT.jar'
 $pluginDirectory = Join-Path $serverDirectory 'plugins'
 
 if (-not (Test-Path -LiteralPath $javaExecutable)) {
@@ -18,7 +18,9 @@ Copy-Item -LiteralPath $pluginSource -Destination (Join-Path $pluginDirectory 'W
 
 Push-Location $serverDirectory
 try {
-    & $javaExecutable -Xms1G -Xmx2G -jar paper.jar --nogui
+    # Pin the normal test-server identity so one-off Paper command-line overrides
+    # cannot leave server.properties pointing at a temporary world or port.
+    & $javaExecutable -Xms1G -Xmx2G -jar paper.jar --nogui --world lobby --port 25565
 }
 finally {
     Pop-Location

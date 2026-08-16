@@ -14,6 +14,7 @@ test-server/logs/
 test-server/versions/
 test-server/world/
 test-server/lobby/
+test-server/runtime-*/
 test-server/plugins/
 test-server/paper.jar
 test-server/*.yml

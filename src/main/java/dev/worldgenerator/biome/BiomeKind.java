@@ -1,6 +1,7 @@
 package dev.worldgenerator.biome;
 
 public enum BiomeKind {
+    VOID,
     DEEP_FROZEN_OCEAN,
     FROZEN_OCEAN,
     DEEP_COLD_OCEAN,
