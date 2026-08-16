@@ -151,3 +151,13 @@ mountain summits into noise or damaging broad buildable lowlands.
 The terrain diagnostics now include a one-block-per-pixel shaded slope close-up.
 Automated scans across three seeds reject sloped windows where a parallel
 one-block contour terrace remains continuous for more than 36 blocks.
+
+## Balanced lowlands (v0.7.3)
+
+The 4-8 block micro-relief layer from v0.7.2 was removed because integer height
+rounding turned it into dense one-block bumps and pits across ordinary plains.
+Medium-scale spurs and saddles remain, while drainage gullies now activate only
+inside established hill and mountain regions. The paired acceptance limits keep
+parallel slope terraces at 64 blocks or less and short-scale rough points below
+2.1% of ordinary lowland samples. This replaces the overly aggressive 36-block
+target with a balance between readable slopes and smooth playable ground.

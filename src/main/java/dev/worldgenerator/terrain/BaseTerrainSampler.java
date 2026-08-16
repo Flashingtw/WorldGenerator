@@ -9,7 +9,6 @@ public final class BaseTerrainSampler {
     private final PerlinNoise2D detailWarp;
     private final PerlinNoise2D slopeRelief;
     private final PerlinNoise2D erosionChannels;
-    private final PerlinNoise2D microRelief;
 
     public BaseTerrainSampler(long seed, WorldBounds bounds) {
         macroLayout = new MacroTerrainLayout(seed, bounds);
@@ -19,7 +18,6 @@ public final class BaseTerrainSampler {
         detailWarp = new PerlinNoise2D(seed ^ 0x243F6A8885A308D3L);
         slopeRelief = new PerlinNoise2D(seed ^ 0x13198A2E03707344L);
         erosionChannels = new PerlinNoise2D(seed ^ 0xA4093822299F31D0L);
-        microRelief = new PerlinNoise2D(seed ^ 0x082EFA98EC4E6C89L);
     }
 
     public TerrainSample sample(int blockX, int blockZ) {
@@ -51,15 +49,14 @@ public final class BaseTerrainSampler {
         double channelField = Math.abs(erosionChannels.fractal(
                 warpedX / 155.0, warpedZ / 155.0, 3, 2.0, 0.54));
         double channel = 1.0 - smoothstep(0.025, 0.115, channelField);
+        double hillDrainage = hillTransition
+                * smoothstep(0.08, 0.28, macro.hillStrength());
+        double mountainDrainage = mountainTransition
+                * smoothstep(0.08, 0.22, macro.mountainEnvelope());
         double channelDepth = channel * channel
-                * (hillTransition * 2.5 + mountainTransition * 7.0);
-        double microShape = microRelief.fractal(
-                warpedX / 8.0, warpedZ / 8.0, 2, 2.0, 0.55);
-        double microAmplitude = 0.6
-                + hillTransition * 1.5
-                + mountainTransition * 4.0;
+                * (hillDrainage * 2.5 + mountainDrainage * 7.0);
         double landHeight = lowlands + hillHeight + mountainHeight
-                + localRelief + microShape * microAmplitude - channelDepth;
+                + localRelief - channelDepth;
         int height = (int) Math.round(lerp(oceanFloor, landHeight, macro.landStrength()));
         double mountainStrength = macro.mountainEnvelope() * (0.42 + ridge * 0.58);
         return new TerrainSample(height, macro.continentalness(), mountainStrength);

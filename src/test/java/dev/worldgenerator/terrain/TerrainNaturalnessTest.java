@@ -22,8 +22,36 @@ class TerrainNaturalnessTest {
                 }
             }
         }
-        assertTrue(worst.length() <= 36,
+        assertTrue(worst.length() <= 64,
                 "parallel one-block terrace is too long: " + worst);
+    }
+
+    @Test
+    void ordinaryLowlandsDoNotContainDenseShortScaleBumpsAndPits() {
+        int samples = 0;
+        int rough = 0;
+        for (long seed : new long[] {1L, 12_345L, 0x5C00A11L}) {
+            BaseTerrainSampler terrain = new BaseTerrainSampler(seed, new WorldBounds(5_000));
+            for (int x = -2_100; x <= 2_100; x += 8) {
+                for (int z = -2_100; z <= 2_100; z += 8) {
+                    TerrainSample center = terrain.sample(x, z);
+                    if (center.height() < TerrainSampler.SEA_LEVEL + 4
+                            || center.height() > 90
+                            || center.mountainStrength() >= 0.30) continue;
+                    int north = terrain.sample(x, z - 4).height();
+                    int east = terrain.sample(x + 4, z).height();
+                    int south = terrain.sample(x, z + 4).height();
+                    int west = terrain.sample(x - 4, z).height();
+                    int laplacian = Math.abs(center.height() * 4 - north - east - south - west);
+                    if (laplacian >= 3) rough++;
+                    samples++;
+                }
+            }
+        }
+        double ratio = rough / (double) samples;
+        assertTrue(ratio <= 0.021,
+                "ordinary lowland short-scale roughness=" + ratio
+                        + " (" + rough + "/" + samples + ")");
     }
 
     private static TerraceRun longestTerrace(

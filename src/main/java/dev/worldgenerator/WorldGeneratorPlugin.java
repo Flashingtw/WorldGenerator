@@ -38,7 +38,7 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         previewCommand = new PreviewCommandHandler(new PreviewWorldManager(this));
-        getLogger().info("WorldGenerator 0.7.2 natural slope relief enabled.");
+        getLogger().info("WorldGenerator 0.7.3 balanced lowland relief enabled.");
     }
 
     @Override
