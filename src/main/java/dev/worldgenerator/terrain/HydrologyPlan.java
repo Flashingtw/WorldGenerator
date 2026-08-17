@@ -75,10 +75,12 @@ public final class HydrologyPlan {
             double bank = 1.0 - smoothstep(width + 1.5, width + 7.0, distance);
             if (core > 0.0) {
                 double depth = lerp(river.headDepth(), river.mouthDepth(), projection.progress());
-                double targetBed = projection.waterLevel() - depth;
+                double containedWaterLevel = Math.min(projection.waterLevel(), base.height());
+                double targetBed = containedWaterLevel - depth;
                 height = lerp(height, Math.min(height, targetBed), core);
-                if (core > 0.35 && height < projection.waterLevel()) {
-                    waterLevel = Math.max(waterLevel, (int) Math.floor(projection.waterLevel()));
+                if (core > 0.35 && height < containedWaterLevel) {
+                    waterLevel = Math.max(
+                            waterLevel, (int) Math.floor(containedWaterLevel));
                 }
                 riverStrength = Math.max(riverStrength, core);
             }

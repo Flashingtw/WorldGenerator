@@ -134,22 +134,25 @@ public final class HydrologyPlanner {
         List<HydrologyPlan.WaterNode> result = new ArrayList<>();
         double firstNatural = terrain.sample(organic.get(0).x(), organic.get(0).z()).height() - 2.0;
         double previous = Math.max(TerrainSampler.SEA_LEVEL + 3.0, firstNatural);
-        boolean waterfallPlaced = false;
         for (int index = 0; index < organic.size(); index++) {
             Point point = organic.get(index);
             double progress = index / (organic.size() - 1.0);
+            Point before = organic.get(Math.max(0, index - 1));
+            Point after = organic.get(Math.min(organic.size() - 1, index + 1));
+            double dx = after.x() - before.x();
+            double dz = after.z() - before.z();
+            double length = Math.max(1.0, Math.hypot(dx, dz));
+            double normalX = -dz / length;
+            double normalZ = dx / length;
             double natural = terrain.sample(point.x(), point.z()).height() - 1.0;
+            for (int offset : new int[] {-12, -6, 6, 12}) {
+                int bankX = (int) Math.round(point.x() + normalX * offset);
+                int bankZ = (int) Math.round(point.z() + normalZ * offset);
+                natural = Math.min(natural, terrain.sample(bankX, bankZ).height() - 1.0);
+            }
             double profileCeiling = firstNatural
                     + (TerrainSampler.SEA_LEVEL - firstNatural) * progress + 5.0;
-            double desired = Math.min(previous, Math.min(natural, profileCeiling));
-            double maximumDrop = 1.0;
-            if (!waterfallPlaced && previous >= TerrainSampler.SEA_LEVEL + 12.0
-                    && previous - natural >= 7.0 && index > organic.size() / 8
-                    && index < organic.size() * 7 / 8) {
-                maximumDrop = Math.min(7.0, previous - natural);
-                waterfallPlaced = true;
-            }
-            double level = Math.max(desired, previous - maximumDrop);
+            double level = Math.min(previous, Math.min(natural, profileCeiling));
             level = Math.max(TerrainSampler.SEA_LEVEL, level);
             if (index == organic.size() - 1) level = TerrainSampler.SEA_LEVEL;
             result.add(new HydrologyPlan.WaterNode(point.x(), point.z(), Math.floor(level)));

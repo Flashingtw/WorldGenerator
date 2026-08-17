@@ -75,6 +75,79 @@ class HydrologyAcceptanceTest {
     }
 
     @Test
+    void riverWaterNeverRisesAboveItsUncarvedTerrainEnvelope() {
+        long seed = 12_345L;
+        WorldBounds bounds = new WorldBounds(5_000);
+        BaseTerrainSampler base = new BaseTerrainSampler(seed, bounds);
+        HydrologyPlan plan = HydrologyPlanner.create(seed, bounds, base);
+        int hangingColumns = 0;
+        int maximumExposure = 0;
+        for (HydrologyPlan.River river : plan.rivers()) {
+            for (HydrologyPlan.WaterNode node : river.centerline()) {
+                int x = (int) Math.round(node.x());
+                int z = (int) Math.round(node.z());
+                TerrainSample original = base.sample(x, z);
+                HydrologySample shaped = plan.shape(x, z, original);
+                if (shaped.lakeStrength() < 0.10
+                        && shaped.waterLevel() > TerrainSampler.SEA_LEVEL
+                        && shaped.waterLevel() > original.height()) {
+                    hangingColumns++;
+                    maximumExposure = Math.max(
+                            maximumExposure, shaped.waterLevel() - original.height());
+                }
+            }
+        }
+        assertEquals(0, hangingColumns,
+                "river water escaped above original terrain in " + hangingColumns
+                        + " centerline columns; maximum exposed wall=" + maximumExposure);
+    }
+
+    @Test
+    void riverBanksNeverExposeTallWaterWalls() {
+        long seed = 12_345L;
+        WorldBounds bounds = new WorldBounds(5_000);
+        BaseTerrainSampler base = new BaseTerrainSampler(seed, bounds);
+        HydrologyPlan plan = HydrologyPlanner.create(seed, bounds, base);
+        int exposedEdges = 0;
+        int maximumExposure = 0;
+        for (HydrologyPlan.River river : plan.rivers()) {
+            List<HydrologyPlan.WaterNode> nodes = river.centerline();
+            for (int index = 1; index < nodes.size() - 1; index += 2) {
+                HydrologyPlan.WaterNode before = nodes.get(index - 1);
+                HydrologyPlan.WaterNode node = nodes.get(index);
+                HydrologyPlan.WaterNode after = nodes.get(index + 1);
+                double dx = after.x() - before.x();
+                double dz = after.z() - before.z();
+                double length = Math.max(1.0, Math.hypot(dx, dz));
+                double normalX = -dz / length;
+                double normalZ = dx / length;
+                HydrologySample previous = null;
+                for (int offset = -20; offset <= 20; offset++) {
+                    int x = (int) Math.round(node.x() + normalX * offset);
+                    int z = (int) Math.round(node.z() + normalZ * offset);
+                    HydrologySample current = plan.shape(x, z, base.sample(x, z));
+                    if (previous != null && previous.lakeStrength() < 0.10
+                            && current.lakeStrength() < 0.10) {
+                        HydrologySample wet = inland(previous) ? previous
+                                : inland(current) ? current : null;
+                        HydrologySample dry = wet == previous ? current
+                                : wet == current ? previous : null;
+                        if (wet != null && !inland(dry) && dry.height() < wet.waterLevel()) {
+                            exposedEdges++;
+                            maximumExposure = Math.max(
+                                    maximumExposure, wet.waterLevel() - dry.height());
+                        }
+                    }
+                    previous = current;
+                }
+            }
+        }
+        assertTrue(maximumExposure <= 1,
+                "river banks exposed " + exposedEdges
+                        + " water edges; maximum wall=" + maximumExposure);
+    }
+
+    @Test
     void unlimitedTerrainDoesNotReceiveFiniteArtificialDrainage() {
         HydrologyPlan plan = HydrologyPlanner.create(
                 123L, WorldBounds.UNLIMITED,
@@ -92,5 +165,11 @@ class HydrologyAcceptanceTest {
         }
         result.add(plan.lakes().toString());
         return result;
+    }
+
+    private static boolean inland(HydrologySample sample) {
+        return sample != null
+                && sample.waterLevel() > TerrainSampler.SEA_LEVEL
+                && sample.waterLevel() > sample.height();
     }
 }

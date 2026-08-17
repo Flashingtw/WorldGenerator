@@ -23,6 +23,7 @@ close the window while the server is saving.
 /wg create terrain_b 67890 5000x5000
 /wg create terrain_c random 10000x10000
 /wg create hydro_5000 12345 5000x5000
+/wg overview 12345 5000x5000
 /wg list
 /wg tp terrain_a
 /wg tp terrain_b
@@ -32,6 +33,11 @@ close the window while the server is saving.
 
 Press Tab after `/wg ` to complete subcommands. Press Tab after `/wg tp ` to
 list and complete all currently loaded worlds.
+
+`/wg overview` runs in the background and reports the absolute path when the PNG
+is ready. On this test server the files are stored in
+`plugins/WorldGenerator/overviews/`. Use the overview before creating a world to
+compare seeds without flying across thousands of blocks.
 
 Delete only accepts WorldGenerator worlds with no players inside. Deleted worlds
 are moved to `plugins/WorldGenerator/trash/` so accidental deletion is recoverable.

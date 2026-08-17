@@ -2,6 +2,7 @@ package dev.worldgenerator;
 
 import dev.worldgenerator.biome.WorldGenBiomeProvider;
 import dev.worldgenerator.command.CommandSuggestions;
+import dev.worldgenerator.command.OverviewCommandHandler;
 import dev.worldgenerator.command.PreviewCommandHandler;
 import dev.worldgenerator.preview.PreviewWorldManager;
 import dev.worldgenerator.terrain.SafeSpawnLocator;
@@ -34,11 +35,13 @@ import org.jetbrains.annotations.Nullable;
 
 public final class WorldGeneratorPlugin extends JavaPlugin {
     private PreviewCommandHandler previewCommand;
+    private OverviewCommandHandler overviewCommand;
 
     @Override
     public void onEnable() {
         previewCommand = new PreviewCommandHandler(new PreviewWorldManager(this));
-        getLogger().info("WorldGenerator 0.8.5 hydrology and terrain-aware road network enabled.");
+        overviewCommand = new OverviewCommandHandler(this);
+        getLogger().info("WorldGenerator 0.8.6 hydrology and map overview enabled.");
     }
 
     @Override
@@ -63,6 +66,9 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
             @NotNull String[] args) {
         if (args.length >= 1 && args[0].equalsIgnoreCase("preview")) {
             return previewCommand.execute(sender, label, args);
+        }
+        if (args.length >= 1 && args[0].equalsIgnoreCase("overview")) {
+            return overviewCommand.execute(sender, label, args);
         }
         if (args.length < 2 || !args[0].equalsIgnoreCase("create")) {
             return handleNonCreateCommand(sender, label, args);
@@ -136,10 +142,12 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
 
         if (args.length == 1) {
             return CommandSuggestions.matchingPrefix(
-                    List.of("create", "tp", "delete", "lobby", "list", "preview"), args[0]);
+                    List.of("create", "tp", "delete", "lobby", "list", "overview", "preview"),
+                    args[0]);
         }
 
         if (args[0].equalsIgnoreCase("preview")) return previewCommand.suggestions(args);
+        if (args[0].equalsIgnoreCase("overview")) return overviewCommand.suggestions(args);
 
         if (args.length == 2
                 && (args[0].equalsIgnoreCase("tp") || args[0].equalsIgnoreCase("delete"))) {
@@ -209,6 +217,7 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
         sender.sendMessage("/" + label + " delete <name> confirm");
         sender.sendMessage("/" + label + " lobby");
         sender.sendMessage("/" + label + " list");
+        sender.sendMessage("/" + label + " overview [seed|random] [5000x5000|10000x10000]");
         sender.sendMessage("/" + label + " preview [blueprint|rebuild|clear] [rotation] [mirror]");
         return true;
     }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.List;
+import dev.worldgenerator.overview.OverviewRequest;
 import org.junit.jupiter.api.Test;
 
 class CommandSuggestionsTest {
@@ -29,5 +30,15 @@ class CommandSuggestionsTest {
         assertEquals(3, PreviewCommandHandler.parseRotation("270"));
         assertEquals(List.of("rotation_lab"),
                 CommandSuggestions.matchingPrefix(List.of("rotation_lab", "rebuild"), "rot"));
+    }
+
+    @Test
+    void overviewDefaultsAndFileNamesAreStable() {
+        assertEquals(5_000, OverviewRequest.parseSize("5000x5000"));
+        assertEquals(10_000, OverviewRequest.parseSize("10000"));
+        assertEquals("overview-5000x5000-seed-12345.png",
+                new OverviewRequest(12_345L, 5_000).fileName());
+        assertEquals("overview-5000x5000-seed-m42.png",
+                new OverviewRequest(-42L, 5_000).fileName());
     }
 }

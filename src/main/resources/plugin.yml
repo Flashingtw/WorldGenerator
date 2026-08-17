@@ -7,8 +7,8 @@ author: worldgenerator
 load: STARTUP
 commands:
   worldgen:
-    description: Create, preview, list and switch custom generated worlds
-    usage: /worldgen <create|preview|tp|delete|lobby|list> [arguments]
+    description: Create, overview, preview, list and switch custom generated worlds
+    usage: /worldgen <create|overview|preview|tp|delete|lobby|list> [arguments]
     aliases: [wg]
     permission: worldgenerator.admin
 permissions:

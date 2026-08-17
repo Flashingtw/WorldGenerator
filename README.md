@@ -17,6 +17,7 @@ As an operator, run:
 
 ```text
 /wg create <name> [seed] [size]
+/wg overview [seed|random] [5000x5000|10000x10000]
 /wg tp <name|namespace:name>
 /wg delete <name> confirm
 /wg lobby
@@ -187,6 +188,27 @@ from entering the site core. Trunks, branches, and access sections use distinct
 driving-scale widths and shoulders. Automated acceptance covers three seeds at
 both 5000 and 10000 blocks; the rendered road-network preview overlays route
 hierarchy and POIs on the generated relief map.
+
+## Fast whole-map overview (v0.8.6)
+
+Operators can inspect an entire finite map before creating or exploring it:
+
+```text
+/wg overview 12345
+/wg overview 12345 5000x5000
+/wg overview random 10000x10000
+```
+
+The default size is `5000x5000`. Rendering runs asynchronously and writes a
+1024x1024 PNG under `plugins/WorldGenerator/overviews/`. The image uses the same
+terrain, hydrology, road, surface, and POI samplers as world generation, so the
+same seed and size reproduce the same layout. Rivers are overlaid at a readable
+map width, road classes use separate colors, and POIs receive outlined markers.
+
+v0.8.6 also prevents descending river profiles from remaining above the original
+terrain envelope. This removes the tall stepped water walls that could appear
+when a route crossed rapidly falling ground; one-block shoreline and waterfall
+edges remain valid.
 
 ## Planned abandoned modern city
 
