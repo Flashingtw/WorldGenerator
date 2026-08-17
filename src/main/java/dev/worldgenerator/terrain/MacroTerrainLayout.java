@@ -15,6 +15,7 @@ final class MacroTerrainLayout {
     private final List<CoastFeature> peninsulas;
     private final List<CoastFeature> bays;
     private final List<MountainChain> mountainChains;
+    private final SatelliteIslandPlan satelliteIslands;
     private final double coastPhaseA;
     private final double coastPhaseB;
 
@@ -31,6 +32,7 @@ final class MacroTerrainLayout {
         peninsulas = bounds.isLimited() ? createCoastFeatures(false) : List.of();
         bays = bounds.isLimited() ? createCoastFeatures(true) : List.of();
         mountainChains = bounds.isLimited() ? createMountainChains() : List.of();
+        satelliteIslands = new SatelliteIslandPlan(seed, bounds);
     }
 
     MacroTerrainSample sample(int blockX, int blockZ) {
@@ -42,11 +44,12 @@ final class MacroTerrainLayout {
                 + boundaryWarp.fractal((blockX + 18_731) / scale,
                         (blockZ - 7_913) / scale, 3, 2.0, 0.5) * amount;
         return bounds.isLimited()
-                ? finiteSample(warpedX, warpedZ)
+                ? finiteSample(warpedX, warpedZ, blockX, blockZ)
                 : unlimitedSample(warpedX, warpedZ);
     }
 
-    private MacroTerrainSample finiteSample(double x, double z) {
+    private MacroTerrainSample finiteSample(
+            double x, double z, double featureX, double featureZ) {
         double half = bounds.size() / 2.0;
         double angle = Math.atan2(z, x);
         double radial = Math.hypot(x / (half * 0.91), z / (half * 0.94));
@@ -63,10 +66,14 @@ final class MacroTerrainLayout {
         for (CoastFeature bay : bays) {
             land *= 1.0 - bay.strength(x, z) * 0.96;
         }
+        // Authored offshore features stay aligned with their bridge geometry while
+        // the main coastline remains domain-warped.
+        land = satelliteIslands.shapeMainIsland(land, featureX, featureZ);
         land = clamp01(land);
 
         double hills = smoothstep(-0.30, 0.52,
                 hillRegions.fractal(x / 1_050.0, z / 1_050.0, 3, 2.0, 0.52));
+        double satelliteStrength = satelliteIslands.islandStrength(featureX, featureZ);
         double rangeWarp = bounds.size() * 0.018;
         double rangeX = x + upliftRegions.fractal(x / 760.0, z / 760.0, 3, 2.0, 0.5) * rangeWarp;
         double rangeZ = z + hillRegions.fractal(
@@ -79,7 +86,9 @@ final class MacroTerrainLayout {
                 x / 620.0, z / 620.0, 3, 2.0, 0.5) * 0.30;
         mountainEnvelope = clamp01(mountainEnvelope * mountainTexture);
         mountainEnvelope *= smoothstep(0.48, 0.90, land);
+        mountainEnvelope *= 1.0 - satelliteStrength * 0.96;
         hills *= land * (1.0 - mountainEnvelope * 0.62);
+        hills *= 1.0 - satelliteStrength * 0.88;
         return new MacroTerrainSample(land, land * 2.0 - 1.0, hills, mountainEnvelope);
     }
 

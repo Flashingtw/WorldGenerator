@@ -9,6 +9,7 @@ import dev.worldgenerator.map.RoadKind;
 import dev.worldgenerator.map.RoadNode;
 import dev.worldgenerator.map.RoadSegment;
 import dev.worldgenerator.terrain.HydrologyPlan;
+import dev.worldgenerator.terrain.SatelliteIslandPlan;
 import dev.worldgenerator.terrain.TerrainSample;
 import dev.worldgenerator.terrain.TerrainSampler;
 import dev.worldgenerator.terrain.WorldBounds;
@@ -61,10 +62,12 @@ public final class MapOverviewRenderer {
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
         drawRivers(graphics, terrain.hydrology(), bounds.size(), resolution);
-        for (RoadSegment road : terrain.plan().roads()) {
+        drawBrokenBridges(graphics, new SatelliteIslandPlan(seed, bounds),
+                bounds.size(), resolution);
+        for (RoadSegment road : terrain.plan().allRoads()) {
             drawRoad(graphics, road, bounds.size(), resolution, true);
         }
-        for (RoadSegment road : terrain.plan().roads()) {
+        for (RoadSegment road : terrain.plan().allRoads()) {
             drawRoad(graphics, road, bounds.size(), resolution, false);
         }
         for (var poi : terrain.plan().pointsOfInterest()) {
@@ -152,6 +155,35 @@ public final class MapOverviewRenderer {
                     pixel(to.x(), mapSize, resolution),
                     pixel(to.z(), mapSize, resolution));
         }
+    }
+
+    private static void drawBrokenBridges(
+            Graphics2D graphics, SatelliteIslandPlan plan,
+            int mapSize, int resolution) {
+        graphics.setColor(new Color(105, 101, 92));
+        for (SatelliteIslandPlan.BrokenBridge bridge : plan.bridges()) {
+            float width = Math.max(1.5f,
+                    (float) (bridge.width() * resolution / mapSize));
+            graphics.setStroke(new BasicStroke(
+                    width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+            double dx = bridge.endX() - bridge.startX();
+            double dz = bridge.endZ() - bridge.startZ();
+            drawBridgeSpan(graphics, bridge.startX(), bridge.startZ(),
+                    bridge.startX() + dx * bridge.firstBreak(),
+                    bridge.startZ() + dz * bridge.firstBreak(), mapSize, resolution);
+            drawBridgeSpan(graphics,
+                    bridge.startX() + dx * bridge.secondBreak(),
+                    bridge.startZ() + dz * bridge.secondBreak(),
+                    bridge.endX(), bridge.endZ(), mapSize, resolution);
+        }
+    }
+
+    private static void drawBridgeSpan(
+            Graphics2D graphics, double startX, double startZ, double endX, double endZ,
+            int mapSize, int resolution) {
+        graphics.drawLine(pixel(startX, mapSize, resolution),
+                pixel(startZ, mapSize, resolution), pixel(endX, mapSize, resolution),
+                pixel(endZ, mapSize, resolution));
     }
 
     private static Color color(TerrainSample terrain, SurfaceSample surface) {

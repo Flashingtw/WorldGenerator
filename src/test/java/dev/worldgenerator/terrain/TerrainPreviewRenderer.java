@@ -78,8 +78,8 @@ public final class TerrainPreviewRenderer {
         Graphics2D graphics = image.createGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-        for (RoadSegment road : terrain.plan().roads()) drawRoad(graphics, road, mapSize, true);
-        for (RoadSegment road : terrain.plan().roads()) drawRoad(graphics, road, mapSize, false);
+        for (RoadSegment road : terrain.plan().allRoads()) drawRoad(graphics, road, mapSize, true);
+        for (RoadSegment road : terrain.plan().allRoads()) drawRoad(graphics, road, mapSize, false);
         for (var poi : terrain.plan().pointsOfInterest()) {
             int x = pixel(poi.x(), mapSize);
             int z = pixel(poi.z(), mapSize);

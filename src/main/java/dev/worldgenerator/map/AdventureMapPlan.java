@@ -9,6 +9,8 @@ public final class AdventureMapPlan {
 
     private final List<MapPoi> pointsOfInterest;
     private final List<RoadSegment> roads;
+    private final List<RoadSegment> bridgeApproaches;
+    private final List<RoadSegment> shapingRoads;
     private final PerlinNoise2D roadEdgeNoise;
 
     public AdventureMapPlan(List<MapPoi> pointsOfInterest, List<RoadSegment> roads) {
@@ -16,8 +18,20 @@ public final class AdventureMapPlan {
     }
 
     public AdventureMapPlan(long seed, List<MapPoi> pointsOfInterest, List<RoadSegment> roads) {
+        this(seed, pointsOfInterest, roads, List.of());
+    }
+
+    public AdventureMapPlan(
+            long seed, List<MapPoi> pointsOfInterest, List<RoadSegment> roads,
+            List<RoadSegment> bridgeApproaches) {
         this.pointsOfInterest = List.copyOf(pointsOfInterest);
         this.roads = List.copyOf(roads);
+        this.bridgeApproaches = List.copyOf(bridgeApproaches);
+        var combined = new java.util.ArrayList<RoadSegment>(
+                roads.size() + bridgeApproaches.size());
+        combined.addAll(roads);
+        combined.addAll(bridgeApproaches);
+        shapingRoads = List.copyOf(combined);
         roadEdgeNoise = new PerlinNoise2D(seed ^ 0xA54FF53A5F1D36F1L);
     }
 
@@ -33,6 +47,14 @@ public final class AdventureMapPlan {
         return roads;
     }
 
+    public List<RoadSegment> bridgeApproaches() {
+        return bridgeApproaches;
+    }
+
+    public List<RoadSegment> allRoads() {
+        return shapingRoads;
+    }
+
     public PlannedTerrain shape(int x, int z, int baseHeight) {
         double height = baseHeight;
         double roadStrength = 0.0;
@@ -41,7 +63,7 @@ public final class AdventureMapPlan {
         double strongestShoulder = 0.0;
         double roadTargetHeight = baseHeight;
 
-        for (RoadSegment road : roads) {
+        for (RoadSegment road : shapingRoads) {
             RoadSegment.Projection projection = road.projection(x, z);
             RoadKind kind = road.kindAt(projection);
             double edgeScale = kind == RoadKind.TRUNK ? 1.4 : kind == RoadKind.BRANCH ? 1.8 : 1.2;
@@ -58,7 +80,8 @@ public final class AdventureMapPlan {
                     kind.coreRadius() - 1.0, kind.coreRadius() + 1.5, distance));
         }
         if (strongestShoulder > 0.0) {
-            height = lerp(height, roadTargetHeight, strongestShoulder * 0.90);
+            height = lerp(height, roadTargetHeight,
+                    Math.max(strongestShoulder * 0.90, roadStrength));
         }
 
         for (MapPoi poi : pointsOfInterest) {

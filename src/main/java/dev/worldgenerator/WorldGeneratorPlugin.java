@@ -41,7 +41,8 @@ public final class WorldGeneratorPlugin extends JavaPlugin {
     public void onEnable() {
         previewCommand = new PreviewCommandHandler(new PreviewWorldManager(this));
         overviewCommand = new OverviewCommandHandler(this);
-        getLogger().info("WorldGenerator 0.8.6 hydrology and map overview enabled.");
+        getLogger().info("WorldGenerator " + getPluginMeta().getVersion()
+                + " terrain, hydrology, overview, and offshore features enabled.");
     }
 
     @Override

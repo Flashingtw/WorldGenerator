@@ -210,6 +210,21 @@ terrain envelope. This removes the tall stepped water walls that could appear
 when a route crossed rapidly falling ground; one-block shoreline and waterfall
 edges remain valid.
 
+## Satellite islands and ruined bridges (v0.8.7)
+
+Finite worlds can now add deterministic offshore satellite islands. A 5000-block
+map receives zero to two and a 10000-block map zero to three, with the count,
+position, outline, and bridge damage controlled by the world seed. Each island is
+separated from the main coast by a forced navigable channel rather than touching
+the mainland through a narrow terrain seam.
+
+Every satellite island has a ruined concrete bridge with two surviving spans, an
+open-water gap, irregular broken edges, damaged deck blocks, edge barriers, and
+periodic supporting piers. Offshore islands are excluded from the generic POI
+road graph, preventing ordinary gravel roads from routing across the sea. The
+whole-map overview draws both surviving bridge spans so operators can identify
+these destinations before generating the world.
+
 ## Planned abandoned modern city
 
 The city is planned as a macro region rather than an oversized POI. A 5000x5000

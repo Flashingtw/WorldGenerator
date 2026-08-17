@@ -3,6 +3,7 @@ package dev.worldgenerator.map;
 import dev.worldgenerator.terrain.TerrainSample;
 import dev.worldgenerator.terrain.TerrainSampler;
 import dev.worldgenerator.terrain.TerrainSource;
+import dev.worldgenerator.terrain.SatelliteIslandPlan;
 import dev.worldgenerator.terrain.WorldBounds;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,10 +17,81 @@ public final class AdventureMapPlanner {
     }
 
     public static AdventureMapPlan create(long seed, WorldBounds bounds, TerrainSource terrain) {
+        return create(seed, bounds, terrain, new SatelliteIslandPlan(seed, bounds));
+    }
+
+    public static AdventureMapPlan create(
+            long seed, WorldBounds bounds, TerrainSource terrain,
+            SatelliteIslandPlan satelliteIslands) {
         if (!bounds.isLimited()) return AdventureMapPlan.empty();
         List<Candidate> candidates = findCandidates(seed, bounds.size(), terrain);
         List<MapPoi> points = selectPoints(candidates, bounds.size());
-        return new AdventureMapPlan(seed, points, connect(seed, bounds.size(), points, terrain));
+        List<RoadSegment> roads = connect(seed, bounds.size(), points, terrain);
+        List<RoadSegment> approaches = connectBridgeApproaches(
+                seed, bounds.size(), terrain, roads, satelliteIslands);
+        return new AdventureMapPlan(seed, points, roads, approaches);
+    }
+
+    private static List<RoadSegment> connectBridgeApproaches(
+            long seed, int mapSize, TerrainSource terrain, List<RoadSegment> roads,
+            SatelliteIslandPlan satelliteIslands) {
+        if (roads.isEmpty() || satelliteIslands.bridges().isEmpty()) return List.of();
+        List<RoadSegment> result = new ArrayList<>();
+        for (int index = 0; index < satelliteIslands.bridges().size(); index++) {
+            SatelliteIslandPlan.BrokenBridge bridge = satelliteIslands.bridges().get(index);
+            SatelliteIslandPlan.Island island = satelliteIslands.islands().get(index);
+            RoadNode network = nearestRoadNode(roads, bridge.startX(), bridge.startZ());
+            RoadNode mainBridge = new RoadNode(
+                    bridge.startX(), bridge.deckY(), bridge.startZ());
+            MapPoi networkJunction = marker(network);
+            MapPoi mainAbutment = marker(mainBridge);
+            result.add(new RoadSegment(networkJunction, mainAbutment, RoadKind.BRANCH,
+                    TerrainRoadRouter.route(seed ^ (index * 0x5DEECE66DL), mapSize,
+                            terrain, network, mainBridge)));
+
+            double dx = bridge.endX() - bridge.startX();
+            double dz = bridge.endZ() - bridge.startZ();
+            double length = Math.max(1.0, Math.hypot(dx, dz));
+            double directionX = dx / length;
+            double directionZ = dz / length;
+            double side = ((index & 1) == 0 ? 1.0 : -1.0)
+                    * island.tangentialWidth() * 0.42;
+            double goalX = island.centerX() + directionX * island.radialLength() * 0.42
+                    - directionZ * side;
+            double goalZ = island.centerZ() + directionZ * island.radialLength() * 0.42
+                    + directionX * side;
+            TerrainSample goalTerrain = terrain.sample(
+                    (int) Math.round(goalX), (int) Math.round(goalZ));
+            RoadNode islandBridge = new RoadNode(
+                    bridge.endX(), bridge.deckY(), bridge.endZ());
+            RoadNode islandRoad = new RoadNode(goalX, goalTerrain.height(), goalZ);
+            result.add(new RoadSegment(marker(islandBridge), marker(islandRoad),
+                    RoadKind.ACCESS, TerrainRoadRouter.route(
+                    seed ^ (index * 0xC2B2AE3D27D4EB4FL) ^ 0x71D6A5B4L,
+                    mapSize, terrain, islandBridge, islandRoad)));
+        }
+        return List.copyOf(result);
+    }
+
+    private static RoadNode nearestRoadNode(
+            List<RoadSegment> roads, double x, double z) {
+        RoadNode nearest = null;
+        double bestDistance = Double.POSITIVE_INFINITY;
+        for (RoadSegment road : roads) {
+            for (RoadNode node : road.centerline()) {
+                double distance = Math.hypot(node.x() - x, node.z() - z);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    nearest = node;
+                }
+            }
+        }
+        return nearest;
+    }
+
+    private static MapPoi marker(RoadNode node) {
+        return new MapPoi((int) Math.round(node.x()), (int) Math.round(node.y()),
+                (int) Math.round(node.z()), PoiType.SMALL);
     }
 
     private static List<Candidate> findCandidates(long seed, int size, TerrainSource terrain) {
@@ -32,6 +104,9 @@ public final class AdventureMapPlanner {
                 int jitter = Math.max(1, step / 3);
                 int px = x + signedInt(seed, x, z, 11, jitter);
                 int pz = z + signedInt(seed, x, z, 29, jitter);
+                // Offshore islands are authored destinations reached by their ruined bridge,
+                // not generic POIs that the normal road graph should connect across open sea.
+                if (Math.hypot(px, pz) > size * 0.42) continue;
                 TerrainSample center = terrain.sample(px, pz);
                 if (center.height() < TerrainSampler.SEA_LEVEL + 6 || center.height() > 108
                         || center.mountainStrength() > 0.58) continue;

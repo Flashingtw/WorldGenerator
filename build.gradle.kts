@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "dev.worldgenerator"
-version = "0.8.6-SNAPSHOT"
+version = "0.8.7-SNAPSHOT"
 val pluginVersion = version
 
 repositories {
@@ -27,6 +27,7 @@ tasks.test {
 }
 
 tasks.processResources {
+    inputs.property("pluginVersion", pluginVersion)
     filesMatching("plugin.yml") {
         expand("version" to pluginVersion)
     }

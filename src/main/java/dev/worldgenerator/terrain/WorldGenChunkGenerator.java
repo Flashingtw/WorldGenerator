@@ -28,6 +28,7 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
     private final BiomeSampler biomes;
     private final SurfaceSampler surfaces;
     private final WarDamagedStructurePlan structures;
+    private final SatelliteIslandPlan satelliteIslands;
     private final long seed;
     private final WorldBounds bounds;
 
@@ -42,6 +43,7 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
         this.biomes = new BiomeSampler(seed, bounds);
         this.surfaces = new SurfaceSampler(seed);
         this.structures = WarDamagedStructurePlan.create(seed, terrain.plan());
+        this.satelliteIslands = new SatelliteIslandPlan(seed, bounds);
     }
 
     @Override
@@ -68,6 +70,45 @@ public final class WorldGenChunkGenerator extends ChunkGenerator {
             }
         }
         placeStructures(chunkData, chunkX, chunkZ);
+        placeBrokenBridges(chunkData, chunkX, chunkZ);
+    }
+
+    private void placeBrokenBridges(ChunkData data, int chunkX, int chunkZ) {
+        int originX = chunkX << 4;
+        int originZ = chunkZ << 4;
+        for (int localX = 0; localX < 16; localX++) {
+            int x = originX + localX;
+            for (int localZ = 0; localZ < 16; localZ++) {
+                int z = originZ + localZ;
+                for (SatelliteIslandPlan.BrokenBridge bridge : satelliteIslands.bridges()) {
+                    SatelliteIslandPlan.BridgeColumn column = bridge.sample(x, z);
+                    if (!column.deck()) continue;
+                    int y = bridge.deckY();
+                    if (y - 2 < data.getMinHeight() || y + 1 >= data.getMaxHeight()) continue;
+                    Material foundation = column.damaged()
+                            ? Material.CRACKED_STONE_BRICKS : Material.STONE_BRICKS;
+                    if (column.pier()) {
+                        int floor = Math.max(data.getMinHeight() + 1,
+                                Math.min(y - 3, terrain.sample(x, z).height() + 1));
+                        for (int supportY = floor; supportY < y - 1; supportY++) {
+                            data.setBlock(localX, supportY, localZ, foundation);
+                        }
+                    }
+                    if (column.pierCap()) {
+                        data.setBlock(localX, y - 3, localZ, foundation);
+                    }
+                    data.setBlock(localX, y - 2, localZ, foundation);
+                    data.setBlock(localX, y - 1, localZ,
+                            column.damaged() ? Material.TUFF_BRICKS : Material.POLISHED_ANDESITE);
+                    data.setBlock(localX, y, localZ,
+                            column.damaged() ? Material.CRACKED_STONE_BRICKS
+                                    : Material.GRAY_CONCRETE);
+                    if (column.edge() && !column.damaged()) {
+                        data.setBlock(localX, y + 1, localZ, Material.STONE_BRICK_SLAB);
+                    }
+                }
+            }
+        }
     }
 
     private void placeStructures(ChunkData data, int chunkX, int chunkZ) {

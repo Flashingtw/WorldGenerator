@@ -10,6 +10,7 @@ public final class TerrainSampler {
     private final BaseTerrainSampler base;
     private final HydrologyPlan hydrology;
     private final AdventureMapPlan plan;
+    private final SatelliteIslandPlan satelliteIslands;
 
     public TerrainSampler(long seed) {
         this(seed, WorldBounds.UNLIMITED);
@@ -17,12 +18,13 @@ public final class TerrainSampler {
 
     public TerrainSampler(long seed, WorldBounds bounds) {
         base = new BaseTerrainSampler(seed, bounds);
+        satelliteIslands = new SatelliteIslandPlan(seed, bounds);
         hydrology = bounds.isLimited()
                 ? HydrologyPlanner.create(seed, bounds, base)
                 : HydrologyPlan.empty();
         TerrainSource hydrated = this::sampleHydrology;
         plan = bounds.isLimited()
-                ? AdventureMapPlanner.create(seed, bounds, hydrated)
+                ? AdventureMapPlanner.create(seed, bounds, hydrated, satelliteIslands)
                 : AdventureMapPlan.empty();
     }
 
